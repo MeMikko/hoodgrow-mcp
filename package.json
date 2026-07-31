@@ -1,0 +1,54 @@
+{
+  "name": "hoodgrow-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for the HoodGrow Robinhood Chain stock token API — get_catalog, get_token, get_corporate_actions as tools for any MCP client (Claude Desktop, Claude Code, etc). Wraps the hoodgrow npm SDK; pays per call via x402 or uses a bearer API key.",
+  "type": "module",
+  "bin": {
+    "hoodgrow-mcp": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && chmod +x dist/index.js",
+    "test": "tsx --test test/*.test.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "hoodgrow",
+    "mcp",
+    "model-context-protocol",
+    "x402",
+    "robinhood-chain",
+    "stock-tokens",
+    "tokenized-equities",
+    "agent",
+    "ai-agent"
+  ],
+  "license": "MIT",
+  "author": "HoodGrow",
+  "homepage": "https://www.hoodgrow.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MeMikko/hoodgrow-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MeMikko/hoodgrow-mcp/issues"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "hoodgrow": "^0.1.0",
+    "viem": "^2.55.10",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "tsx": "^4.23.1",
+    "typescript": "^5"
+  }
+}
