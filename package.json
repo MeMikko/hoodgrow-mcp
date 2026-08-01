@@ -33,6 +33,7 @@
   "license": "MIT",
   "author": "HoodGrow",
   "homepage": "https://www.hoodgrow.com",
+  "mcpName": "io.github.MeMikko/hoodgrow-mcp",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/MeMikko/hoodgrow-mcp.git"
