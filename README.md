@@ -15,7 +15,7 @@ credential, you supply your own so you control what gets spent and who's
 billed. Pick one:
 
 - **x402, pay per call, no signup** — a wallet private key (`HOODGROW_PRIVATE_KEY`),
-  funded with USDC on Base. $0.50/call for the full catalog, $0.05/call for
+  funded with USDC on Base. $0.10/call for the full catalog, $0.05/call for
   one token.
 - **API key, free, issued access** — `HOODGROW_API_KEY` from
   [hoodgrow.com/api-access](https://www.hoodgrow.com/api-access).
@@ -62,7 +62,7 @@ that wallet with what you're willing to spend on this API.
 
 | Tool | Price (x402) | Description |
 | --- | --- | --- |
-| `get_catalog` | $0.50 | Every listed token: price, source, 24h change, corporate-action adjusted supply, DeFi depth, plus catalog-wide pending/recent corporate actions |
+| `get_catalog` | $0.10 | Every listed token: price, source, 24h change, corporate-action adjusted supply, DeFi depth, plus catalog-wide pending/recent corporate actions |
 | `get_token` | $0.05 | One token by symbol (e.g. `NVDA`), same fields, scoped |
 | `get_corporate_actions` | uses `get_token`/`get_catalog` above | Pending + recent corporate actions; pass a symbol to scope, omit for every tracked token |
 
@@ -76,7 +76,7 @@ x402 payments are real money and are **not** idempotent — a retried timed-out
 call can pay twice. HoodGrow's paywall only ever asks for USDC
 (`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`) on Base mainnet
 (`eip155:8453`), paid to `0x8520B3693a2Cf3c2bEa3a505Af3A9c1b093954c7`, capped
-at $0.50/call — the underlying `hoodgrow`/`@x402` dependencies handle
+at $0.10/call — the underlying `hoodgrow`/`@x402` dependencies handle
 protocol-level verification, but you're responsible for how much you fund
 the signing wallet with.
 
