@@ -1,33 +1,33 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.MeMikko/hoodgrow-mcp",
   "description": "Robinhood Chain stock token data — price, adjusted supply, corporate actions.",
-  "version": "0.1.1",
-  "website_url": "https://www.hoodgrow.com/api-access",
+  "version": "0.1.2",
+  "websiteUrl": "https://www.hoodgrow.com/api-access",
   "repository": {
     "url": "https://github.com/MeMikko/hoodgrow-mcp",
     "source": "github"
   },
   "packages": [
     {
-      "registry_type": "npm",
-      "registry_base_url": "https://registry.npmjs.org",
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "hoodgrow-mcp",
-      "version": "0.1.1",
-      "runtime_hint": "npx",
+      "version": "0.1.2",
+      "runtimeHint": "npx",
       "transport": { "type": "stdio" },
-      "environment_variables": [
+      "environmentVariables": [
         {
           "name": "HOODGROW_API_KEY",
           "description": "Bearer API key issued by HoodGrow (DM https://x.com/hoodgrow). Optional if HOODGROW_PRIVATE_KEY is set instead.",
-          "is_required": false,
-          "is_secret": true
+          "isRequired": false,
+          "isSecret": true
         },
         {
           "name": "HOODGROW_PRIVATE_KEY",
           "description": "EVM private key used to pay per call via x402 instead of a bearer key. Optional if HOODGROW_API_KEY is set instead.",
-          "is_required": false,
-          "is_secret": true
+          "isRequired": false,
+          "isSecret": true
         }
       ]
     }
