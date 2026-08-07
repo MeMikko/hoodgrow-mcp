@@ -39,7 +39,7 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
         "Full catalog of Robinhood Chain stock tokens: live price, corporate-action " +
         "adjusted supply, DeFi depth (best Morpho supply APY, Uniswap V3 TVL), and " +
         "pending/recent corporate actions for every listed token. Paid per call " +
-        "($0.50 via x402, free with an API key) — prefer get_token for a single symbol.",
+        "($0.10 via x402, free with an API key) — prefer get_token for a single symbol.",
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     async (): Promise<CallToolResult> => {
