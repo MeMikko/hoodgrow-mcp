@@ -1,6 +1,6 @@
 {
   "name": "hoodgrow-mcp",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "MCP server for the HoodGrow Robinhood Chain stock token API — get_catalog, get_token, get_corporate_actions, get_defi, get_holders, get_slippage as tools for any MCP client (Claude Desktop, Claude Code, etc). Wraps the hoodgrow npm SDK; pays per call via x402 or uses a bearer API key.",
   "type": "module",
   "bin": {

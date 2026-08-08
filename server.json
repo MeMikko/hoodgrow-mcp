@@ -1,8 +1,8 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.MeMikko/hoodgrow-mcp",
-  "description": "Robinhood Chain stock token data — price, adjusted supply, corporate actions, DeFi depth, holder analytics, trade slippage.",
-  "version": "0.2.1",
+  "description": "Robinhood Chain stock token data — price, DeFi depth, holders, corporate actions, trade slippage.",
+  "version": "0.2.2",
   "websiteUrl": "https://www.hoodgrow.com/api-access",
   "repository": {
     "url": "https://github.com/MeMikko/hoodgrow-mcp",
@@ -13,7 +13,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "hoodgrow-mcp",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "runtimeHint": "npx",
       "transport": { "type": "stdio" },
       "environmentVariables": [
