@@ -4,9 +4,10 @@ MCP ([Model Context Protocol](https://modelcontextprotocol.io)) server for the
 [HoodGrow](https://www.hoodgrow.com) Robinhood Chain stock token API — live
 price, corporate-action adjusted supply (ERC-8056, correct through stock
 splits), Morpho/Uniswap DeFi depth, corporate actions (splits, dividends),
-holder analytics, trade price-impact/slippage estimates, and OHLC price
-candles for backtesting, exposed as tools for any MCP client (Claude
-Desktop, Claude Code, etc). Built on the
+holder analytics, trade price-impact/slippage estimates, OHLC price
+candles for backtesting, and a Base mainnet B20 native-equity-token
+registry, exposed as tools for any MCP client (Claude Desktop, Claude
+Code, etc). Built on the
 [`hoodgrow`](https://github.com/MeMikko/hoodgrow-ts) SDK — pays per call via
 **x402** (USDC on Base) or uses a bearer API key, your choice.
 
@@ -71,6 +72,7 @@ that wallet with what you're willing to spend on this API.
 | `get_holders` | $0.05 | Holder-count trend, 24h net supply change (real mint/burn), and top-holder concentration (optional `limit`, 1-50, defaults to 10) |
 | `get_slippage` | $0.05 | How much a USD-sized trade (`side: "buy" \| "sell"`) would move the price, per Uniswap V3 pool — includes `bestPoolAddress`/`bestEffectivePrice` picking the best one for you |
 | `get_ohlc` | $0.05 | OHLC price candles for backtesting (`interval: "1h" \| "4h" \| "1d"`, optional `from`/`to`/`limit`, defaults to the last 30 days). **OHLC only, no volume** — HoodGrow has no historical trading-volume time series to draw a volume field from |
+| `get_base_tokens` | $0.05 | Base mainnet (chain 8453) B20 native-equity-token registry — a much smaller sibling of `get_catalog`. **Pre-launch**: check each token's `status` before treating it as tradable — `"pre_launch"` means no price, no DEX liquidity, no holders exist for it yet |
 
 Each call returns the API's JSON response as the tool's text content. A
 failed request (unknown symbol, server error) comes back as an MCP tool

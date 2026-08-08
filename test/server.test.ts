@@ -37,12 +37,13 @@ test("clientOptionsFromEnv builds a signer from HOODGROW_PRIVATE_KEY", () => {
   assert.ok(opts.signer.address.startsWith("0x"));
 });
 
-test("lists exactly the seven documented tools", async () => {
+test("lists exactly the eight documented tools", async () => {
   const { client } = await connectedClient({ apiKey: "test-key" });
   const { tools } = await client.listTools();
   assert.deepEqual(
     tools.map((t) => t.name).sort(),
     [
+      "get_base_tokens",
       "get_catalog",
       "get_corporate_actions",
       "get_defi",
@@ -254,6 +255,44 @@ test("get_ohlc surfaces a HoodGrowError as an MCP tool error, not a thrown excep
     assert.equal(result.isError, true);
     const text = (result.content as Array<{ type: string; text: string }>)[0].text;
     assert.match(text, /404/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("get_base_tokens calls the Base registry endpoint and returns the pre-launch note", async () => {
+  const originalFetch = globalThis.fetch;
+  let capturedUrl = "";
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    capturedUrl = typeof input === "string" ? input : input.toString();
+    return new Response(
+      JSON.stringify({
+        chainId: 8453,
+        updatedAt: "2026-08-08T12:00:00.000Z",
+        note: "PRE-LAUNCH: ...",
+        tokens: [
+          {
+            symbol: "AAPL",
+            name: "Apple Inc.",
+            address: "0xb200000000000000000000C2e324d24d7eEcd1fb",
+            decimals: 8,
+            status: "pre_launch",
+            totalSupplyRaw: "0",
+            totalSupply: 0,
+            checkedAt: "2026-08-08T12:00:00.000Z",
+          },
+        ],
+      }),
+      { status: 200, headers: { "content-type": "application/json" } }
+    );
+  }) as typeof fetch;
+  try {
+    const { client } = await connectedClient({ apiKey: "test-key" });
+    const result = await client.callTool({ name: "get_base_tokens", arguments: {} });
+    assert.equal(result.isError, undefined);
+    const text = (result.content as Array<{ type: string; text: string }>)[0].text;
+    assert.equal(JSON.parse(text).chainId, 8453);
+    assert.equal(capturedUrl, "https://www.hoodgrow.com/api/agent/base/tokens");
   } finally {
     globalThis.fetch = originalFetch;
   }

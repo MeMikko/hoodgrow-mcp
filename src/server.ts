@@ -28,7 +28,7 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
 
   const server = new McpServer({
     name: "hoodgrow-mcp",
-    version: "0.3.0",
+    version: "0.4.0",
   });
 
   server.registerTool(
@@ -211,6 +211,29 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
     async ({ symbol, interval, from, to, limit }): Promise<CallToolResult> => {
       try {
         return textResult(await client.getOhlc(symbol, interval, { from, to, limit }));
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_base_tokens",
+    {
+      title: "Get HoodGrow Base B20 token registry",
+      description:
+        "Base mainnet (chain 8453) B20 native-equity-token registry — verified " +
+        "on-chain metadata (symbol, name, decimals) for a fixed set of known " +
+        "tokens, plus a liveness signal. PRE-LAUNCH: every token currently has " +
+        "zero minted supply — no price, no DEX liquidity, no holders exist yet. " +
+        "status flips to \"live\" automatically once totalSupply() > 0 on-chain; " +
+        "do not treat a pre_launch entry as tradable. $0.05 via x402, free with " +
+        "an API key.",
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    async (): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.getBaseTokens());
       } catch (error) {
         return errorResult(error);
       }
