@@ -19,16 +19,16 @@ function errorResult(error: unknown): CallToolResult {
 }
 
 /**
- * Builds the MCP server with its three tools wired to a HoodGrowClient.
- * Kept separate from the stdio entrypoint (index.ts) so tests can call
- * tool handlers directly without spinning up a transport.
+ * Builds the MCP server with its tools wired to a HoodGrowClient. Kept
+ * separate from the stdio entrypoint (index.ts) so tests can call tool
+ * handlers directly without spinning up a transport.
  */
 export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
   const client = new HoodGrowClient(clientOptions);
 
   const server = new McpServer({
     name: "hoodgrow-mcp",
-    version: "0.2.2",
+    version: "0.3.0",
   });
 
   server.registerTool(
@@ -177,6 +177,40 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
     async ({ symbol, amountUsd, side }): Promise<CallToolResult> => {
       try {
         return textResult(await client.getSlippage(symbol, amountUsd, side));
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_ohlc",
+    {
+      title: "Get HoodGrow OHLC price candles",
+      description:
+        "OHLC price candles for backtesting, bucketed from price history already " +
+        "collected every ~15 min. OHLC only, no volume — HoodGrow has no historical " +
+        "trading-volume time series to draw a volume field from. Defaults to the last " +
+        "30 days if from/to are omitted; window capped at 730 days. $0.05 via x402, " +
+        "free with an API key. Fails for an unknown symbol.",
+      inputSchema: {
+        symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
+        interval: z.enum(["1h", "4h", "1d"]).describe("Candle bucket size."),
+        from: z.string().optional().describe("ISO 8601 start (default: 30 days before `to`)."),
+        to: z.string().optional().describe("ISO 8601 end (default: now)."),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(1000)
+          .optional()
+          .describe("Max candles to return, 1-1000. Defaults to 500."),
+      },
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    async ({ symbol, interval, from, to, limit }): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.getOhlc(symbol, interval, { from, to, limit }));
       } catch (error) {
         return errorResult(error);
       }
