@@ -37,12 +37,19 @@ test("clientOptionsFromEnv builds a signer from HOODGROW_PRIVATE_KEY", () => {
   assert.ok(opts.signer.address.startsWith("0x"));
 });
 
-test("lists exactly the three documented tools", async () => {
+test("lists exactly the six documented tools", async () => {
   const { client } = await connectedClient({ apiKey: "test-key" });
   const { tools } = await client.listTools();
   assert.deepEqual(
     tools.map((t) => t.name).sort(),
-    ["get_catalog", "get_corporate_actions", "get_token"]
+    [
+      "get_catalog",
+      "get_corporate_actions",
+      "get_defi",
+      "get_holders",
+      "get_slippage",
+      "get_token",
+    ]
   );
 });
 
@@ -108,6 +115,82 @@ test("get_corporate_actions omits symbol to scope to all tokens", async () => {
     const { client } = await connectedClient({ apiKey: "test-key" });
     await client.callTool({ name: "get_corporate_actions", arguments: {} });
     assert.equal(capturedUrl, "https://www.hoodgrow.com/api/agent/tokens");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("get_defi calls the defi endpoint for the given symbol", async () => {
+  const originalFetch = globalThis.fetch;
+  let capturedUrl = "";
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    capturedUrl = typeof input === "string" ? input : input.toString();
+    return new Response(
+      JSON.stringify({
+        chainId: 4663,
+        symbol: "NVDA",
+        updatedAt: "2026-08-08T00:00:00.000Z",
+        morphoMarkets: [],
+        uniswapPools: [],
+      }),
+      { status: 200, headers: { "content-type": "application/json" } }
+    );
+  }) as typeof fetch;
+  try {
+    const { client } = await connectedClient({ apiKey: "test-key" });
+    const result = await client.callTool({ name: "get_defi", arguments: { symbol: "nvda" } });
+    assert.equal(result.isError, undefined);
+    assert.equal(capturedUrl, "https://www.hoodgrow.com/api/agent/defi/NVDA");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("get_holders passes limit through as a query param", async () => {
+  const originalFetch = globalThis.fetch;
+  let capturedUrl = "";
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    capturedUrl = typeof input === "string" ? input : input.toString();
+    return new Response(
+      JSON.stringify({
+        chainId: 4663,
+        symbol: "NVDA",
+        updatedAt: "2026-08-08T00:00:00.000Z",
+        holderCount: 1342,
+        holderCountDelta: null,
+        holderCountDeltaSinceTs: null,
+        holderSnapshotTs: null,
+        supplyChange24h: null,
+        topHolders: { snapshotTs: null, totalHolders: 0, holders: [] },
+      }),
+      { status: 200, headers: { "content-type": "application/json" } }
+    );
+  }) as typeof fetch;
+  try {
+    const { client } = await connectedClient({ apiKey: "test-key" });
+    await client.callTool({ name: "get_holders", arguments: { symbol: "nvda", limit: 25 } });
+    assert.equal(capturedUrl, "https://www.hoodgrow.com/api/agent/holders/NVDA?limit=25");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("get_slippage surfaces a HoodGrowError as an MCP tool error, not a thrown exception", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () =>
+    new Response(JSON.stringify({ error: "Unknown symbol" }), {
+      status: 404,
+      headers: { "content-type": "application/json" },
+    })) as typeof fetch;
+  try {
+    const { client } = await connectedClient({ apiKey: "test-key" });
+    const result = await client.callTool({
+      name: "get_slippage",
+      arguments: { symbol: "NOTREAL", amountUsd: 10000, side: "buy" },
+    });
+    assert.equal(result.isError, true);
+    const text = (result.content as Array<{ type: string; text: string }>)[0].text;
+    assert.match(text, /404/);
   } finally {
     globalThis.fetch = originalFetch;
   }

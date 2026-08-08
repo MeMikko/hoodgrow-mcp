@@ -3,10 +3,11 @@
 MCP ([Model Context Protocol](https://modelcontextprotocol.io)) server for the
 [HoodGrow](https://www.hoodgrow.com) Robinhood Chain stock token API — live
 price, corporate-action adjusted supply (ERC-8056, correct through stock
-splits), Morpho/Uniswap DeFi depth, and corporate actions (splits, dividends),
-exposed as tools for any MCP client (Claude Desktop, Claude Code, etc). Built
-on the [`hoodgrow`](https://github.com/MeMikko/hoodgrow-ts) SDK — pays per
-call via **x402** (USDC on Base) or uses a bearer API key, your choice.
+splits), Morpho/Uniswap DeFi depth, corporate actions (splits, dividends),
+holder analytics, and trade price-impact/slippage estimates, exposed as
+tools for any MCP client (Claude Desktop, Claude Code, etc). Built on the
+[`hoodgrow`](https://github.com/MeMikko/hoodgrow-ts) SDK — pays per call via
+**x402** (USDC on Base) or uses a bearer API key, your choice.
 
 ## Setup
 
@@ -65,6 +66,9 @@ that wallet with what you're willing to spend on this API.
 | `get_catalog` | $0.10 | Every listed token: price, source, 24h change, corporate-action adjusted supply, DeFi depth, plus catalog-wide pending/recent corporate actions |
 | `get_token` | $0.05 | One token by symbol (e.g. `NVDA`), same fields, scoped |
 | `get_corporate_actions` | uses `get_token`/`get_catalog` above | Pending + recent corporate actions; pass a symbol to scope, omit for every tracked token |
+| `get_defi` | $0.05 | Every Morpho market a token participates in (loan OR collateral role) plus its Uniswap V3 pools — not just the single best-APY figure in `get_catalog`/`get_token` |
+| `get_holders` | $0.05 | Holder-count trend, 24h net supply change (real mint/burn), and top-holder concentration (optional `limit`, 1-50, defaults to 10) |
+| `get_slippage` | $0.05 | How much a USD-sized trade (`side: "buy" \| "sell"`) would move the price, per Uniswap V3 pool — includes `bestPoolAddress`/`bestEffectivePrice` picking the best one for you |
 
 Each call returns the API's JSON response as the tool's text content. A
 failed request (unknown symbol, server error) comes back as an MCP tool

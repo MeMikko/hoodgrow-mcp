@@ -28,7 +28,7 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
 
   const server = new McpServer({
     name: "hoodgrow-mcp",
-    version: "0.1.0",
+    version: "0.2.0",
   });
 
   server.registerTool(
@@ -94,6 +94,89 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
     async ({ symbol }): Promise<CallToolResult> => {
       try {
         return textResult(await client.getCorporateActions(symbol));
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_defi",
+    {
+      title: "Get HoodGrow token DeFi detail",
+      description:
+        "Every Morpho lending market (as loan asset OR collateral, both roles labeled) " +
+        "and Uniswap V3 pool involving one token — the full picture for comparing yield/ " +
+        "borrow options, not just the single best-APY figure in get_catalog/get_token. " +
+        "$0.05 via x402, free with an API key. Fails for an unknown symbol.",
+      inputSchema: {
+        symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
+      },
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    async ({ symbol }): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.getDefi(symbol));
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_holders",
+    {
+      title: "Get HoodGrow token holder analytics",
+      description:
+        "Holder-count trend, 24h net total_supply change (real mint/burn — creation/ " +
+        "redemption of the underlying tokenized shares, distinct from a corporate-action " +
+        "multiplier change), and top-holder concentration for one token. $0.05 via x402, " +
+        "free with an API key. Fails for an unknown symbol.",
+      inputSchema: {
+        symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(50)
+          .optional()
+          .describe("How many top holders to return, 1-50. Defaults to 10."),
+      },
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    async ({ symbol, limit }): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.getHolders(symbol, limit));
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_slippage",
+    {
+      title: "Get HoodGrow trade price-impact estimate",
+      description:
+        "How much a USD-sized trade would move the price, per Uniswap V3 pool this " +
+        "token trades on — plus bestPoolAddress/bestEffectivePrice picking the best " +
+        "of them for you. Per-pool estimate, not an optimal multi-pool route/split. " +
+        "Exact within each pool's currently active tick range; a likelyCrossesTick flag " +
+        "on a result means the trade is probably large enough that this may understate " +
+        "real slippage — consider splitting into smaller tranches (TWAP) instead. " +
+        "$0.05 via x402, free with an API key. Fails for an unknown symbol.",
+      inputSchema: {
+        symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
+        amountUsd: z.number().positive().describe("Trade size in USD."),
+        side: z
+          .enum(["buy", "sell"])
+          .describe('"buy" spends USDG for the stock token, "sell" spends the stock token for USDG.'),
+      },
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    async ({ symbol, amountUsd, side }): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.getSlippage(symbol, amountUsd, side));
       } catch (error) {
         return errorResult(error);
       }
