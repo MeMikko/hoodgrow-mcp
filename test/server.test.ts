@@ -3,9 +3,16 @@ import assert from "node:assert/strict";
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { privateKeyToAccount } from "viem/accounts";
 
 import { createServer } from "../src/server.js";
 import { clientOptionsFromEnv } from "../src/config.js";
+
+/** Well-known public test private key (Hardhat/Anvil default account #0) —
+ * never funded, safe to hardcode in a test file. */
+const TEST_ACCOUNT = privateKeyToAccount(
+  "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+);
 
 /** Wires a real MCP Client to our server over an in-memory transport pair —
  * exercises the actual list/call-tool protocol path, not just our own code. */
@@ -37,20 +44,23 @@ test("clientOptionsFromEnv builds a signer from HOODGROW_PRIVATE_KEY", () => {
   assert.ok(opts.signer.address.startsWith("0x"));
 });
 
-test("lists exactly the eight documented tools", async () => {
+test("lists exactly the eleven documented tools", async () => {
   const { client } = await connectedClient({ apiKey: "test-key" });
   const { tools } = await client.listTools();
   assert.deepEqual(
     tools.map((t) => t.name).sort(),
     [
+      "buy_credits",
       "get_base_tokens",
       "get_catalog",
       "get_corporate_actions",
+      "get_credit_balance",
       "get_defi",
       "get_holders",
       "get_ohlc",
       "get_slippage",
       "get_token",
+      "list_credit_bundles",
     ]
   );
 });
@@ -296,4 +306,63 @@ test("get_base_tokens calls the Base registry endpoint and returns the pre-launc
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("list_credit_bundles works with an apiKey client (no signer needed)", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () =>
+    new Response(JSON.stringify({ bundles: { "10": { priceUsd: 10, creditUsd: 11 } } }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    })) as typeof fetch;
+  try {
+    const { client } = await connectedClient({ apiKey: "test-key" });
+    const result = await client.callTool({ name: "list_credit_bundles", arguments: {} });
+    assert.equal(result.isError, undefined);
+    const text = (result.content as Array<{ type: string; text: string }>)[0].text;
+    assert.equal(JSON.parse(text)["10"].priceUsd, 10);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("get_credit_balance surfaces the 'requires a signer' error for an apiKey-only client", async () => {
+  const { client } = await connectedClient({ apiKey: "test-key" });
+  const result = await client.callTool({ name: "get_credit_balance", arguments: {} });
+  assert.equal(result.isError, true);
+  const text = (result.content as Array<{ type: string; text: string }>)[0].text;
+  assert.match(text, /requires a `signer`/);
+});
+
+test("buy_credits surfaces the 'requires a signer' error for an apiKey-only client", async () => {
+  const { client } = await connectedClient({ apiKey: "test-key" });
+  const result = await client.callTool({ name: "buy_credits", arguments: { bundleId: "10" } });
+  assert.equal(result.isError, true);
+  const text = (result.content as Array<{ type: string; text: string }>)[0].text;
+  assert.match(text, /requires a `signer`/);
+});
+
+test("get_credit_balance calls the balance endpoint with a signer and returns the balance", async () => {
+  const originalFetch = globalThis.fetch;
+  let capturedUrl = "";
+  let capturedHeaders: Record<string, string> = {};
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    capturedUrl = typeof input === "string" ? input : input.toString();
+    capturedHeaders = (init?.headers as Record<string, string> | undefined) ?? {};
+    return new Response(
+      JSON.stringify({ walletAddress: TEST_ACCOUNT.address.toLowerCase(), balanceUsd: 5.5 }),
+      { status: 200, headers: { "content-type": "application/json" } }
+    );
+  }) as typeof fetch;
+  try {
+    const { client } = await connectedClient({ signer: TEST_ACCOUNT });
+    const result = await client.callTool({ name: "get_credit_balance", arguments: {} });
+    assert.equal(result.isError, undefined);
+    const text = (result.content as Array<{ type: string; text: string }>)[0].text;
+    assert.equal(JSON.parse(text).balanceUsd, 5.5);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  assert.equal(capturedUrl, "https://www.hoodgrow.com/api/agent/credits/balance");
+  assert.equal(capturedHeaders["X-HoodGrow-Credit-Wallet"], TEST_ACCOUNT.address);
 });

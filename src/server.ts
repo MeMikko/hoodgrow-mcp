@@ -240,5 +240,72 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
     }
   );
 
+  server.registerTool(
+    "list_credit_bundles",
+    {
+      title: "List HoodGrow prepaid credit bundles",
+      description:
+        "Current prepaid credit bundle catalog ({id: {priceUsd, creditUsd}}) — free, " +
+        "no credentials required. A bundle is paid once via x402 (buy_credits) and " +
+        "spent down over many calls afterward via a cheap wallet signature instead " +
+        "of a fresh on-chain payment per call — see HOODGROW_USE_CREDITS.",
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    async (): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.listCreditBundles());
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "buy_credits",
+    {
+      title: "Buy a HoodGrow prepaid credit bundle",
+      description:
+        "Pays for one prepaid credit bundle via x402 (see list_credit_bundles for " +
+        "ids/prices) — a REAL, irreversible USDC payment on Base mainnet. Requires " +
+        "HOODGROW_PRIVATE_KEY to be configured (a bearer-key setup is already free " +
+        "and has no use for credits). The balance lands once settlement confirms; " +
+        "call get_credit_balance to verify. To actually start spending it instead " +
+        "of paying x402 per call, set HOODGROW_USE_CREDITS=true and restart this " +
+        "server.",
+      inputSchema: {
+        bundleId: z
+          .string()
+          .min(1)
+          .describe('Bundle id from list_credit_bundles, e.g. "10", "50", "200".'),
+      },
+      annotations: { readOnlyHint: false, openWorldHint: true },
+    },
+    async ({ bundleId }): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.buyCredits(bundleId));
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_credit_balance",
+    {
+      title: "Get HoodGrow prepaid credit balance",
+      description:
+        "This wallet's current prepaid credit balance — free (no x402 charge, no " +
+        "credit spend). Requires HOODGROW_PRIVATE_KEY to be configured.",
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    async (): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.getCreditBalance());
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
   return server;
 }

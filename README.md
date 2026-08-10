@@ -61,6 +61,11 @@ Or with an API key instead:
 Never hardcode a real private key in a committed config file — only fund
 that wallet with what you're willing to spend on this API.
 
+Optionally, once you've bought a credit balance with the `buy_credits` tool,
+add `"HOODGROW_USE_CREDITS": "true"` alongside `HOODGROW_PRIVATE_KEY` to
+have every data tool spend that balance (a cheap wallet signature) instead
+of paying x402 per call. See "Prepaid credits" below.
+
 ## Tools
 
 | Tool | Price (x402) | Description |
@@ -73,10 +78,23 @@ that wallet with what you're willing to spend on this API.
 | `get_slippage` | $0.05 | How much a USD-sized trade (`side: "buy" \| "sell"`) would move the price, per Uniswap V3 pool — includes `bestPoolAddress`/`bestEffectivePrice` picking the best one for you |
 | `get_ohlc` | $0.05 | OHLC price candles for backtesting (`interval: "1h" \| "4h" \| "1d"`, optional `from`/`to`/`limit`, defaults to the last 30 days). **OHLC only, no volume** — HoodGrow has no historical trading-volume time series to draw a volume field from |
 | `get_base_tokens` | $0.05 | Base mainnet (chain 8453) B20 native-equity-token registry — a much smaller sibling of `get_catalog`. **Pre-launch**: check each token's `status` before treating it as tradable — `"pre_launch"` means no price, no DEX liquidity, no holders exist for it yet |
+| `list_credit_bundles` | free | Current prepaid credit bundle catalog (`{id: {priceUsd, creditUsd}}`) — no credentials needed |
+| `buy_credits` | one x402 payment | Pays for one bundle (`bundleId` arg); requires `HOODGROW_PRIVATE_KEY`. Balance lands once settlement confirms — check with `get_credit_balance` |
+| `get_credit_balance` | free | This wallet's current credit balance; requires `HOODGROW_PRIVATE_KEY` |
 
 Each call returns the API's JSON response as the tool's text content. A
 failed request (unknown symbol, server error) comes back as an MCP tool
 error (`isError: true`) rather than crashing the server.
+
+## Prepaid credits
+
+Buy a dollar-denominated credit balance once via x402 (`buy_credits`), then
+set `HOODGROW_USE_CREDITS=true` (alongside `HOODGROW_PRIVATE_KEY`) and
+restart the server: every data tool above then spends the balance with a
+cheap, gas-free wallet signature instead of a fresh on-chain x402 payment
+per call. `list_credit_bundles`/`get_credit_balance` never spend anything;
+only the metered data tools (`get_catalog`, `get_token`, etc.) and
+`buy_credits` itself move money.
 
 ## Payment safety
 
