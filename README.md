@@ -5,9 +5,9 @@ MCP ([Model Context Protocol](https://modelcontextprotocol.io)) server for the
 price, corporate-action adjusted supply (ERC-8056, correct through stock
 splits), Morpho/Uniswap DeFi depth, corporate actions (splits, dividends),
 holder analytics, trade price-impact/slippage estimates, OHLC price
-candles for backtesting, and a Base mainnet B20 native-equity-token
-registry, exposed as tools for any MCP client (Claude Desktop, Claude
-Code, etc). Built on the
+candles for backtesting, market movers, a large-trade ("whale") feed,
+and a Base mainnet B20 native-equity-token registry, exposed as tools for
+any MCP client (Claude Desktop, Claude Code, etc). Built on the
 [`hoodgrow`](https://github.com/MeMikko/hoodgrow-ts) SDK — pays per call via
 **x402** (USDC on Base) or uses a bearer API key, your choice.
 
@@ -76,8 +76,10 @@ of paying x402 per call. See "Prepaid credits" below.
 | `get_defi` | $0.05 | Every Morpho market a token participates in (loan OR collateral role) plus its Uniswap V3 pools — not just the single best-APY figure in `get_catalog`/`get_token` |
 | `get_holders` | $0.05 | Holder-count trend, 24h net supply change (real mint/burn), and top-holder concentration (optional `limit`, 1-50, defaults to 10) |
 | `get_slippage` | $0.05 | How much a USD-sized trade (`side: "buy" \| "sell"`) would move the price, per Uniswap V3 pool — includes `bestPoolAddress`/`bestEffectivePrice` picking the best one for you |
-| `get_ohlc` | $0.05 | OHLC price candles for backtesting (`interval: "1h" \| "4h" \| "1d"`, optional `from`/`to`/`limit`, defaults to the last 30 days). **OHLC only, no volume** — HoodGrow has no historical trading-volume time series to draw a volume field from |
+| `get_ohlc` | $0.05 | OHLC price candles for backtesting (`interval: "1h" \| "4h" \| "1d"`, optional `from`/`to`/`limit`, defaults to the last 30 days). Each candle carries `volumeUsd`/`swapCount` — USD swap volume across the token's Uniswap V3 pools — `null` for buckets older than the volume indexer's backfill window |
 | `get_base_tokens` | $0.05 | Base mainnet (chain 8453) B20 native-equity-token registry — a much smaller sibling of `get_catalog`. **Pre-launch**: check each token's `status` before treating it as tradable — `"pre_launch"` means no price, no DEX liquidity, no holders exist for it yet |
+| `get_markets` | $0.05 | Market movers across the whole catalog: top gainers/losers (24h change), highest 24h swap volume, and deepest Uniswap V3 liquidity (TVL). Optional `limit` (1-50, default 10); gainers/losers can be empty on a flat market |
+| `get_trades` | $0.05 | Recent large ("whale") trades in the stock-token Uniswap V3 pools, newest first — each with `side` (`"buy" \| "sell"`), USD size, and `txHash`. Omit `symbol` for the global feed; optional `limit` (1-100, default 20) |
 | `list_credit_bundles` | free | Current prepaid credit bundle catalog (`{id: {priceUsd, creditUsd}}`) — no credentials needed |
 | `buy_credits` | one x402 payment | Pays for one bundle (`bundleId` arg); requires `HOODGROW_PRIVATE_KEY`. Balance lands once settlement confirms — check with `get_credit_balance` |
 | `get_credit_balance` | free | This wallet's current credit balance; requires `HOODGROW_PRIVATE_KEY` |
