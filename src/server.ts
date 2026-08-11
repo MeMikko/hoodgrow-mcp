@@ -189,10 +189,11 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
       title: "Get HoodGrow OHLC price candles",
       description:
         "OHLC price candles for backtesting, bucketed from price history already " +
-        "collected every ~15 min. OHLC only, no volume — HoodGrow has no historical " +
-        "trading-volume time series to draw a volume field from. Defaults to the last " +
-        "30 days if from/to are omitted; window capped at 730 days. $0.05 via x402, " +
-        "free with an API key. Fails for an unknown symbol.",
+        "collected every ~15 min. Each candle also carries volumeUsd/swapCount — USD " +
+        "swap volume across the token's Uniswap V3 pools, null for buckets older than " +
+        "the volume indexer's backfill window. Defaults to the last 30 days if from/to " +
+        "are omitted; window capped at 730 days. $0.05 via x402, free with an API key. " +
+        "Fails for an unknown symbol.",
       inputSchema: {
         symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
         interval: z.enum(["1h", "4h", "1d"]).describe("Candle bucket size."),
@@ -234,6 +235,69 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
     async (): Promise<CallToolResult> => {
       try {
         return textResult(await client.getBaseTokens());
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_markets",
+    {
+      title: "Get HoodGrow market movers",
+      description:
+        "Market movers across the Robinhood Chain stock-token catalog: top gainers and " +
+        "losers by 24h price change, highest 24h swap volume, and deepest Uniswap V3 " +
+        "liquidity (TVL). limit caps each list (1-50, default 10); gainers/losers can be " +
+        "empty when the market is flat (e.g. weekends). $0.05 via x402, free with an API key.",
+      inputSchema: {
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(50)
+          .optional()
+          .describe("Max entries per list, 1-50. Defaults to 10."),
+      },
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    async ({ limit }): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.getMarkets({ limit }));
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_trades",
+    {
+      title: "Get HoodGrow recent large trades",
+      description:
+        "Recent large (whale) trades in Robinhood Chain stock-token Uniswap V3 pools, " +
+        "newest first — each with a buy/sell side, USD size, and transaction hash. Omit " +
+        "symbol for the global feed. limit caps the list (1-100, default 20). $0.05 via " +
+        "x402, free with an API key.",
+      inputSchema: {
+        symbol: z
+          .string()
+          .min(1)
+          .optional()
+          .describe("Filter to one token, e.g. \"NVDA\" (case-insensitive). Omit for the global feed."),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(100)
+          .optional()
+          .describe("Max trades to return, 1-100. Defaults to 20."),
+      },
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    async ({ symbol, limit }): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.getTrades({ symbol, limit }));
       } catch (error) {
         return errorResult(error);
       }

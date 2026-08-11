@@ -44,7 +44,7 @@ test("clientOptionsFromEnv builds a signer from HOODGROW_PRIVATE_KEY", () => {
   assert.ok(opts.signer.address.startsWith("0x"));
 });
 
-test("lists exactly the eleven documented tools", async () => {
+test("lists exactly the thirteen documented tools", async () => {
   const { client } = await connectedClient({ apiKey: "test-key" });
   const { tools } = await client.listTools();
   assert.deepEqual(
@@ -57,9 +57,11 @@ test("lists exactly the eleven documented tools", async () => {
       "get_credit_balance",
       "get_defi",
       "get_holders",
+      "get_markets",
       "get_ohlc",
       "get_slippage",
       "get_token",
+      "get_trades",
       "list_credit_bundles",
     ]
   );
