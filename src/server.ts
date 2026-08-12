@@ -31,6 +31,33 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
     version: "0.4.0",
   });
 
+  // Every tool declares all four MCP behaviour hints as explicit booleans —
+  // some registries (e.g. OpenAI's directory) reject tools where any hint is
+  // missing or non-boolean. Shared constants keep them consistent.
+  // READ: pure data reads — safe, repeatable, hit an external API/chain.
+  const READ = {
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  } as const;
+  // PAY: buy_credits makes a real, irreversible x402 payment — not read-only,
+  // destructive (money leaves the wallet), and each call pays again.
+  const PAY = {
+    readOnlyHint: false,
+    destructiveHint: true,
+    idempotentHint: false,
+    openWorldHint: true,
+  } as const;
+  // REGISTER: register_credit_webhook writes a webhook registration —
+  // additive, not destructive, and idempotent (same url/symbols → same state).
+  const REGISTER = {
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  } as const;
+
   server.registerTool(
     "get_catalog",
     {
@@ -40,7 +67,8 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
         "adjusted supply, DeFi depth (best Morpho supply APY, Uniswap V3 TVL), and " +
         "pending/recent corporate actions for every listed token. Paid per call " +
         "($0.10 via x402, free with an API key) — prefer get_token for a single symbol.",
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      inputSchema: {},
+      annotations: READ,
     },
     async (): Promise<CallToolResult> => {
       try {
@@ -63,7 +91,7 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
       inputSchema: {
         symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
       },
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: READ,
     },
     async ({ symbol }): Promise<CallToolResult> => {
       try {
@@ -89,7 +117,7 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
           .optional()
           .describe("Ticker symbol to scope to, e.g. \"NVDA\". Omit for all tokens."),
       },
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: READ,
     },
     async ({ symbol }): Promise<CallToolResult> => {
       try {
@@ -112,7 +140,7 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
       inputSchema: {
         symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
       },
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: READ,
     },
     async ({ symbol }): Promise<CallToolResult> => {
       try {
@@ -142,7 +170,7 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
           .optional()
           .describe("How many top holders to return, 1-50. Defaults to 10."),
       },
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: READ,
     },
     async ({ symbol, limit }): Promise<CallToolResult> => {
       try {
@@ -172,7 +200,7 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
           .enum(["buy", "sell"])
           .describe('"buy" spends USDG for the stock token, "sell" spends the stock token for USDG.'),
       },
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: READ,
     },
     async ({ symbol, amountUsd, side }): Promise<CallToolResult> => {
       try {
@@ -207,7 +235,7 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
           .optional()
           .describe("Max candles to return, 1-1000. Defaults to 500."),
       },
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: READ,
     },
     async ({ symbol, interval, from, to, limit }): Promise<CallToolResult> => {
       try {
@@ -230,7 +258,8 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
         "status flips to \"live\" automatically once totalSupply() > 0 on-chain; " +
         "do not treat a pre_launch entry as tradable. $0.05 via x402, free with " +
         "an API key.",
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      inputSchema: {},
+      annotations: READ,
     },
     async (): Promise<CallToolResult> => {
       try {
@@ -259,7 +288,7 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
           .optional()
           .describe("Max entries per list, 1-50. Defaults to 10."),
       },
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: READ,
     },
     async ({ limit }): Promise<CallToolResult> => {
       try {
@@ -293,7 +322,7 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
           .optional()
           .describe("Max trades to return, 1-100. Defaults to 20."),
       },
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: READ,
     },
     async ({ symbol, limit }): Promise<CallToolResult> => {
       try {
@@ -313,7 +342,8 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
         "no credentials required. A bundle is paid once via x402 (buy_credits) and " +
         "spent down over many calls afterward via a cheap wallet signature instead " +
         "of a fresh on-chain payment per call — see HOODGROW_USE_CREDITS.",
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      inputSchema: {},
+      annotations: READ,
     },
     async (): Promise<CallToolResult> => {
       try {
@@ -342,7 +372,7 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
           .min(1)
           .describe('Bundle id from list_credit_bundles, e.g. "10", "50", "200".'),
       },
-      annotations: { readOnlyHint: false, openWorldHint: true },
+      annotations: PAY,
     },
     async ({ bundleId }): Promise<CallToolResult> => {
       try {
@@ -360,7 +390,8 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
       description:
         "This wallet's current prepaid credit balance — free (no x402 charge, no " +
         "credit spend). Requires HOODGROW_PRIVATE_KEY to be configured.",
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      inputSchema: {},
+      annotations: READ,
     },
     async (): Promise<CallToolResult> => {
       try {
@@ -398,7 +429,7 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
             'Restrict delivery (and per-event billing) to these symbols, e.g. ["NVDA","INTC"]. Omit for all tokens.'
           ),
       },
-      annotations: { readOnlyHint: false, openWorldHint: true },
+      annotations: REGISTER,
     },
     async ({ url, symbols }): Promise<CallToolResult> => {
       try {
