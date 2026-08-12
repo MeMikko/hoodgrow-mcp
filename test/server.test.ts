@@ -44,7 +44,7 @@ test("clientOptionsFromEnv builds a signer from HOODGROW_PRIVATE_KEY", () => {
   assert.ok(opts.signer.address.startsWith("0x"));
 });
 
-test("lists exactly the thirteen documented tools", async () => {
+test("lists exactly the fourteen documented tools", async () => {
   const { client } = await connectedClient({ apiKey: "test-key" });
   const { tools } = await client.listTools();
   assert.deepEqual(
@@ -63,6 +63,7 @@ test("lists exactly the thirteen documented tools", async () => {
       "get_token",
       "get_trades",
       "list_credit_bundles",
+      "register_credit_webhook",
     ]
   );
 });
@@ -367,4 +368,58 @@ test("get_credit_balance calls the balance endpoint with a signer and returns th
   }
   assert.equal(capturedUrl, "https://www.hoodgrow.com/api/agent/credits/balance");
   assert.equal(capturedHeaders["X-HoodGrow-Credit-Wallet"], TEST_ACCOUNT.address);
+});
+
+test("register_credit_webhook surfaces the 'requires a signer' error for an apiKey-only client", async () => {
+  const { client } = await connectedClient({ apiKey: "test-key" });
+  const result = await client.callTool({
+    name: "register_credit_webhook",
+    arguments: { url: "https://example.com/hook" },
+  });
+  assert.equal(result.isError, true);
+  const text = (result.content as Array<{ type: string; text: string }>)[0].text;
+  assert.match(text, /requires a `signer`/);
+});
+
+test("register_credit_webhook POSTs url + symbols with a signer and returns the registration", async () => {
+  const originalFetch = globalThis.fetch;
+  let capturedUrl = "";
+  let capturedMethod = "";
+  let capturedBody = "";
+  let capturedHeaders: Record<string, string> = {};
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    capturedUrl = typeof input === "string" ? input : input.toString();
+    capturedMethod = init?.method ?? "GET";
+    capturedBody = String(init?.body ?? "");
+    capturedHeaders = (init?.headers as Record<string, string> | undefined) ?? {};
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        webhookUrl: "https://example.com/hook",
+        webhookSecret: "whsec_abc123",
+        webhookSymbols: "NVDA,INTC",
+        note: "billed per event",
+      }),
+      { status: 200, headers: { "content-type": "application/json" } }
+    );
+  }) as typeof fetch;
+  try {
+    const { client } = await connectedClient({ signer: TEST_ACCOUNT });
+    const result = await client.callTool({
+      name: "register_credit_webhook",
+      arguments: { url: "https://example.com/hook", symbols: ["NVDA", "INTC"] },
+    });
+    assert.equal(result.isError, undefined);
+    const text = (result.content as Array<{ type: string; text: string }>)[0].text;
+    assert.equal(JSON.parse(text).webhookSecret, "whsec_abc123");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  assert.equal(capturedUrl, "https://www.hoodgrow.com/api/agent/credits/webhook");
+  assert.equal(capturedMethod, "POST");
+  assert.equal(capturedHeaders["X-HoodGrow-Credit-Wallet"], TEST_ACCOUNT.address);
+  assert.deepEqual(JSON.parse(capturedBody), {
+    webhookUrl: "https://example.com/hook",
+    webhookSymbols: ["NVDA", "INTC"],
+  });
 });

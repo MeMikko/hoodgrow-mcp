@@ -371,5 +371,43 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
     }
   );
 
+  server.registerTool(
+    "register_credit_webhook",
+    {
+      title: "Register a HoodGrow corporate-action webhook",
+      description:
+        "Register (or update) a credit-funded corporate-action webhook for this wallet: " +
+        "HoodGrow then POSTs each matching corporate_action.* event to your url, signed " +
+        "x-hoodgrow-signature (verify it before trusting the body). Requires " +
+        "HOODGROW_PRIVATE_KEY. Registering is FREE — no payment here; each delivered event " +
+        "is billed per-event against your prepaid credit balance (buy_credits/" +
+        "get_credit_balance), so an idle webhook costs nothing. symbols restricts delivery " +
+        "— and, since billing is per delivered event, what you're charged for — to just " +
+        "those tokens; omit for every token's events. Returns webhookSecret (shown once — " +
+        "store it). This is the credit-funded path; a Builder-subscription webhook is set " +
+        "from the website instead.",
+      inputSchema: {
+        url: z
+          .string()
+          .url()
+          .describe("HTTPS URL HoodGrow POSTs each corporate-action event to."),
+        symbols: z
+          .array(z.string().min(1))
+          .optional()
+          .describe(
+            'Restrict delivery (and per-event billing) to these symbols, e.g. ["NVDA","INTC"]. Omit for all tokens.'
+          ),
+      },
+      annotations: { readOnlyHint: false, openWorldHint: true },
+    },
+    async ({ url, symbols }): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.registerCreditWebhook({ url, symbols }));
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
   return server;
 }
