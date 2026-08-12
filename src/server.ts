@@ -19,17 +19,44 @@ function errorResult(error: unknown): CallToolResult {
 }
 
 /**
- * Builds the MCP server with its three tools wired to a HoodGrowClient.
- * Kept separate from the stdio entrypoint (index.ts) so tests can call
- * tool handlers directly without spinning up a transport.
+ * Builds the MCP server with its tools wired to a HoodGrowClient. Kept
+ * separate from the stdio entrypoint (index.ts) so tests can call tool
+ * handlers directly without spinning up a transport.
  */
 export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
   const client = new HoodGrowClient(clientOptions);
 
   const server = new McpServer({
     name: "hoodgrow-mcp",
-    version: "0.1.0",
+    version: "0.4.0",
   });
+
+  // Every tool declares all four MCP behaviour hints as explicit booleans —
+  // some registries (e.g. OpenAI's directory) reject tools where any hint is
+  // missing or non-boolean. Shared constants keep them consistent.
+  // READ: pure data reads — safe, repeatable, hit an external API/chain.
+  const READ = {
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  } as const;
+  // PAY: buy_credits makes a real, irreversible x402 payment — not read-only,
+  // destructive (money leaves the wallet), and each call pays again.
+  const PAY = {
+    readOnlyHint: false,
+    destructiveHint: true,
+    idempotentHint: false,
+    openWorldHint: true,
+  } as const;
+  // REGISTER: register_credit_webhook writes a webhook registration —
+  // additive, not destructive, and idempotent (same url/symbols → same state).
+  const REGISTER = {
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  } as const;
 
   server.registerTool(
     "get_catalog",
@@ -39,8 +66,9 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
         "Full catalog of Robinhood Chain stock tokens: live price, corporate-action " +
         "adjusted supply, DeFi depth (best Morpho supply APY, Uniswap V3 TVL), and " +
         "pending/recent corporate actions for every listed token. Paid per call " +
-        "($0.50 via x402, free with an API key) — prefer get_token for a single symbol.",
-      annotations: { readOnlyHint: true, openWorldHint: true },
+        "($0.10 via x402, free with an API key) — prefer get_token for a single symbol.",
+      inputSchema: {},
+      annotations: READ,
     },
     async (): Promise<CallToolResult> => {
       try {
@@ -63,7 +91,7 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
       inputSchema: {
         symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
       },
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: READ,
     },
     async ({ symbol }): Promise<CallToolResult> => {
       try {
@@ -89,11 +117,323 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
           .optional()
           .describe("Ticker symbol to scope to, e.g. \"NVDA\". Omit for all tokens."),
       },
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: READ,
     },
     async ({ symbol }): Promise<CallToolResult> => {
       try {
         return textResult(await client.getCorporateActions(symbol));
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_defi",
+    {
+      title: "Get HoodGrow token DeFi detail",
+      description:
+        "Every Morpho lending market (as loan asset OR collateral, both roles labeled) " +
+        "and Uniswap V3 pool involving one token — the full picture for comparing yield/ " +
+        "borrow options, not just the single best-APY figure in get_catalog/get_token. " +
+        "$0.05 via x402, free with an API key. Fails for an unknown symbol.",
+      inputSchema: {
+        symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
+      },
+      annotations: READ,
+    },
+    async ({ symbol }): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.getDefi(symbol));
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_holders",
+    {
+      title: "Get HoodGrow token holder analytics",
+      description:
+        "Holder-count trend, 24h net total_supply change (real mint/burn — creation/ " +
+        "redemption of the underlying tokenized shares, distinct from a corporate-action " +
+        "multiplier change), and top-holder concentration for one token. $0.05 via x402, " +
+        "free with an API key. Fails for an unknown symbol.",
+      inputSchema: {
+        symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(50)
+          .optional()
+          .describe("How many top holders to return, 1-50. Defaults to 10."),
+      },
+      annotations: READ,
+    },
+    async ({ symbol, limit }): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.getHolders(symbol, limit));
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_slippage",
+    {
+      title: "Get HoodGrow trade price-impact estimate",
+      description:
+        "How much a USD-sized trade would move the price, per Uniswap V3 pool this " +
+        "token trades on — plus bestPoolAddress/bestEffectivePrice picking the best " +
+        "of them for you. Per-pool estimate, not an optimal multi-pool route/split. " +
+        "Exact within each pool's currently active tick range; a likelyCrossesTick flag " +
+        "on a result means the trade is probably large enough that this may understate " +
+        "real slippage — consider splitting into smaller tranches (TWAP) instead. " +
+        "$0.05 via x402, free with an API key. Fails for an unknown symbol.",
+      inputSchema: {
+        symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
+        amountUsd: z.number().positive().describe("Trade size in USD."),
+        side: z
+          .enum(["buy", "sell"])
+          .describe('"buy" spends USDG for the stock token, "sell" spends the stock token for USDG.'),
+      },
+      annotations: READ,
+    },
+    async ({ symbol, amountUsd, side }): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.getSlippage(symbol, amountUsd, side));
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_ohlc",
+    {
+      title: "Get HoodGrow OHLC price candles",
+      description:
+        "OHLC price candles for backtesting, bucketed from price history already " +
+        "collected every ~15 min. Each candle also carries volumeUsd/swapCount — USD " +
+        "swap volume across the token's Uniswap V3 pools, null for buckets older than " +
+        "the volume indexer's backfill window. Defaults to the last 30 days if from/to " +
+        "are omitted; window capped at 730 days. $0.05 via x402, free with an API key. " +
+        "Fails for an unknown symbol.",
+      inputSchema: {
+        symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
+        interval: z.enum(["1h", "4h", "1d"]).describe("Candle bucket size."),
+        from: z.string().optional().describe("ISO 8601 start (default: 30 days before `to`)."),
+        to: z.string().optional().describe("ISO 8601 end (default: now)."),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(1000)
+          .optional()
+          .describe("Max candles to return, 1-1000. Defaults to 500."),
+      },
+      annotations: READ,
+    },
+    async ({ symbol, interval, from, to, limit }): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.getOhlc(symbol, interval, { from, to, limit }));
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_base_tokens",
+    {
+      title: "Get HoodGrow Base B20 token registry",
+      description:
+        "Base mainnet (chain 8453) B20 native-equity-token registry — verified " +
+        "on-chain metadata (symbol, name, decimals) for a fixed set of known " +
+        "tokens, plus a liveness signal. PRE-LAUNCH: every token currently has " +
+        "zero minted supply — no price, no DEX liquidity, no holders exist yet. " +
+        "status flips to \"live\" automatically once totalSupply() > 0 on-chain; " +
+        "do not treat a pre_launch entry as tradable. $0.05 via x402, free with " +
+        "an API key.",
+      inputSchema: {},
+      annotations: READ,
+    },
+    async (): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.getBaseTokens());
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_markets",
+    {
+      title: "Get HoodGrow market movers",
+      description:
+        "Market movers across the Robinhood Chain stock-token catalog: top gainers and " +
+        "losers by 24h price change, highest 24h swap volume, and deepest Uniswap V3 " +
+        "liquidity (TVL). limit caps each list (1-50, default 10); gainers/losers can be " +
+        "empty when the market is flat (e.g. weekends). $0.05 via x402, free with an API key.",
+      inputSchema: {
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(50)
+          .optional()
+          .describe("Max entries per list, 1-50. Defaults to 10."),
+      },
+      annotations: READ,
+    },
+    async ({ limit }): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.getMarkets({ limit }));
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_trades",
+    {
+      title: "Get HoodGrow recent large trades",
+      description:
+        "Recent large (whale) trades in Robinhood Chain stock-token Uniswap V3 pools, " +
+        "newest first — each with a buy/sell side, USD size, and transaction hash. Omit " +
+        "symbol for the global feed. limit caps the list (1-100, default 20). $0.05 via " +
+        "x402, free with an API key.",
+      inputSchema: {
+        symbol: z
+          .string()
+          .min(1)
+          .optional()
+          .describe("Filter to one token, e.g. \"NVDA\" (case-insensitive). Omit for the global feed."),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(100)
+          .optional()
+          .describe("Max trades to return, 1-100. Defaults to 20."),
+      },
+      annotations: READ,
+    },
+    async ({ symbol, limit }): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.getTrades({ symbol, limit }));
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "list_credit_bundles",
+    {
+      title: "List HoodGrow prepaid credit bundles",
+      description:
+        "Current prepaid credit bundle catalog ({id: {priceUsd, creditUsd}}) — free, " +
+        "no credentials required. A bundle is paid once via x402 (buy_credits) and " +
+        "spent down over many calls afterward via a cheap wallet signature instead " +
+        "of a fresh on-chain payment per call — see HOODGROW_USE_CREDITS.",
+      inputSchema: {},
+      annotations: READ,
+    },
+    async (): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.listCreditBundles());
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "buy_credits",
+    {
+      title: "Buy a HoodGrow prepaid credit bundle",
+      description:
+        "Pays for one prepaid credit bundle via x402 (see list_credit_bundles for " +
+        "ids/prices) — a REAL, irreversible USDC payment on Base mainnet. Requires " +
+        "HOODGROW_PRIVATE_KEY to be configured (a bearer-key setup is already free " +
+        "and has no use for credits). The balance lands once settlement confirms; " +
+        "call get_credit_balance to verify. To actually start spending it instead " +
+        "of paying x402 per call, set HOODGROW_USE_CREDITS=true and restart this " +
+        "server.",
+      inputSchema: {
+        bundleId: z
+          .string()
+          .min(1)
+          .describe('Bundle id from list_credit_bundles, e.g. "10", "50", "200".'),
+      },
+      annotations: PAY,
+    },
+    async ({ bundleId }): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.buyCredits(bundleId));
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_credit_balance",
+    {
+      title: "Get HoodGrow prepaid credit balance",
+      description:
+        "This wallet's current prepaid credit balance — free (no x402 charge, no " +
+        "credit spend). Requires HOODGROW_PRIVATE_KEY to be configured.",
+      inputSchema: {},
+      annotations: READ,
+    },
+    async (): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.getCreditBalance());
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "register_credit_webhook",
+    {
+      title: "Register a HoodGrow corporate-action webhook",
+      description:
+        "Register (or update) a credit-funded corporate-action webhook for this wallet: " +
+        "HoodGrow then POSTs each matching corporate_action.* event to your url, signed " +
+        "x-hoodgrow-signature (verify it before trusting the body). Requires " +
+        "HOODGROW_PRIVATE_KEY. Registering is FREE — no payment here; each delivered event " +
+        "is billed per-event against your prepaid credit balance (buy_credits/" +
+        "get_credit_balance), so an idle webhook costs nothing. symbols restricts delivery " +
+        "— and, since billing is per delivered event, what you're charged for — to just " +
+        "those tokens; omit for every token's events. Returns webhookSecret (shown once — " +
+        "store it). This is the credit-funded path; a Builder-subscription webhook is set " +
+        "from the website instead.",
+      inputSchema: {
+        url: z
+          .string()
+          .url()
+          .describe("HTTPS URL HoodGrow POSTs each corporate-action event to."),
+        symbols: z
+          .array(z.string().min(1))
+          .optional()
+          .describe(
+            'Restrict delivery (and per-event billing) to these symbols, e.g. ["NVDA","INTC"]. Omit for all tokens.'
+          ),
+      },
+      annotations: REGISTER,
+    },
+    async ({ url, symbols }): Promise<CallToolResult> => {
+      try {
+        return textResult(await client.registerCreditWebhook({ url, symbols }));
       } catch (error) {
         return errorResult(error);
       }

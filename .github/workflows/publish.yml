@@ -40,3 +40,25 @@ jobs:
       - run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Publish/update the listing on the official MCP Registry
+      # (registry.modelcontextprotocol.io) so hoodgrow-mcp is discoverable
+      # by any MCP client's server search, not just people who already know
+      # to look on npm. GitHub OIDC auth — zero secrets to manage, the
+      # id-token: write permission above is all it needs. See
+      # https://modelcontextprotocol.io/registry/github-actions.
+      - name: Sync server.json version to this release
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          jq --arg v "$VERSION" '.version = $v | .packages[0].version = $v' server.json > server.tmp
+          mv server.tmp server.json
+
+      - name: Install mcp-publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+
+      - name: Authenticate to MCP Registry
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish server to MCP Registry
+        run: ./mcp-publisher publish

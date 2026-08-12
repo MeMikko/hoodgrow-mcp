@@ -1,0 +1,47 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.MeMikko/hoodgrow-mcp",
+  "description": "Robinhood Chain stock token data — price, split-adjusted supply, DeFi, corporate actions, movers.",
+  "version": "0.7.1",
+  "websiteUrl": "https://www.hoodgrow.com/api-access",
+  "repository": {
+    "url": "https://github.com/MeMikko/hoodgrow-mcp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "hoodgrow-mcp",
+      "version": "0.7.1",
+      "runtimeHint": "npx",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        {
+          "name": "HOODGROW_API_KEY",
+          "description": "Bearer API key issued by HoodGrow (DM https://x.com/hoodgrow). Optional if HOODGROW_PRIVATE_KEY is set instead.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "HOODGROW_PRIVATE_KEY",
+          "description": "EVM private key used to pay per call via x402 instead of a bearer key. Optional if HOODGROW_API_KEY is set instead.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "HOODGROW_USE_CREDITS",
+          "description": "Set to \"true\" (only meaningful alongside HOODGROW_PRIVATE_KEY) to spend a prepaid credit balance instead of paying x402 per call — buy one first with the buy_credits tool.",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://www.hoodgrow.com/api/mcp"
+    }
+  ]
+}
