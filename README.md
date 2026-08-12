@@ -1,5 +1,8 @@
 # hoodgrow-mcp
 
+[![M8ven Verified](https://m8ven.ai/badge/mcp/memikko-hoodgrow-mcp-1ir3oo)](https://m8ven.ai/mcp/memikko-hoodgrow-mcp-1ir3oo)
+<!-- m8ven-verify: d8f108466b9a82850f70fa7686b78f85 -->
+
 MCP ([Model Context Protocol](https://modelcontextprotocol.io)) server for the
 [HoodGrow](https://www.hoodgrow.com) Robinhood Chain stock token API — live
 price, corporate-action adjusted supply (ERC-8056, correct through stock
