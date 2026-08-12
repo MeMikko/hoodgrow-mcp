@@ -83,6 +83,7 @@ of paying x402 per call. See "Prepaid credits" below.
 | `list_credit_bundles` | free | Current prepaid credit bundle catalog (`{id: {priceUsd, creditUsd}}`) — no credentials needed |
 | `buy_credits` | one x402 payment | Pays for one bundle (`bundleId` arg); requires `HOODGROW_PRIVATE_KEY`. Balance lands once settlement confirms — check with `get_credit_balance` |
 | `get_credit_balance` | free | This wallet's current credit balance; requires `HOODGROW_PRIVATE_KEY` |
+| `register_credit_webhook` | free to register, then per delivered event | Register a credit-funded corporate-action webhook (`url`, optional `symbols`); requires `HOODGROW_PRIVATE_KEY`. HoodGrow POSTs each `corporate_action.*` event to `url`, signed `x-hoodgrow-signature`. `symbols` restricts delivery (and per-event billing) to those tokens — omit for all. Returns `webhookSecret` (shown once). Builder-subscription webhooks are set from the website instead |
 
 Each call returns the API's JSON response as the tool's text content. A
 failed request (unknown symbol, server error) comes back as an MCP tool
