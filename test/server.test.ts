@@ -68,6 +68,34 @@ test("lists exactly the fourteen documented tools", async () => {
   );
 });
 
+test("every tool declares all four boolean hints and an inputSchema", async () => {
+  const { client } = await connectedClient({ apiKey: "test-key" });
+  const { tools } = await client.listTools();
+  const HINTS = [
+    "readOnlyHint",
+    "destructiveHint",
+    "idempotentHint",
+    "openWorldHint",
+  ] as const;
+  for (const t of tools) {
+    const annotations = (t.annotations ?? {}) as Record<string, unknown>;
+    for (const hint of HINTS) {
+      assert.equal(
+        typeof annotations[hint],
+        "boolean",
+        `${t.name} must declare a boolean ${hint}`
+      );
+    }
+    // A JSON-Schema object is always emitted; an object-typed schema (even
+    // with no properties) is what "declares an inputSchema" means here.
+    assert.equal(
+      (t.inputSchema as { type?: string })?.type,
+      "object",
+      `${t.name} must declare an object inputSchema`
+    );
+  }
+});
+
 test("get_catalog calls the API and returns catalog JSON as tool text", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async () =>
