@@ -31,10 +31,31 @@ things to distribute:
 `mcp` `robinhood-chain` `stock-tokens` `defi` `x402` `erc-8056`
 `corporate-actions` `stock-splits` `chainlink` `crypto` `finance`
 
+## Official MCP Registry (registry.modelcontextprotocol.io)
+
+This is the canonical registry many clients/aggregators read from, and it's
+the highest-leverage listing. It's driven by [`server.json`](./server.json) in
+this repo (kept at the current version, with both the npm package and the
+hosted `https://www.hoodgrow.com/api/mcp` remote) plus the `mcpName` field in
+`package.json` that proves package ownership.
+
+Publish (one-time auth via GitHub, then per release):
+
+```bash
+# install the official publisher CLI (see modelcontextprotocol/registry)
+mcp-publisher login github     # authenticates the io.github.MeMikko namespace
+mcp-publisher validate         # checks server.json against the schema
+mcp-publisher publish          # pushes this server.json to the registry
+```
+
+Keep `server.json`'s `version` and `packages[].version` in lockstep with
+`package.json` on every release, and re-run `mcp-publisher publish`.
+
 ## Registries & directories — submission checklist
 
 | Registry | How to submit | Status |
 |---|---|---|
+| **Official MCP Registry** (registry.modelcontextprotocol.io) | `server.json` ready → `mcp-publisher publish` | ☐ |
 | **modelcontextprotocol/servers** (official "community servers" list) | PR adding a row to the README | ☐ |
 | **mcp.so** | Submit form at mcp.so | ☐ |
 | **Glama** (glama.ai/mcp/servers) | Auto-indexes from GitHub; add MCP topic + a `glama.json`; claim the listing | ☐ |
