@@ -11,11 +11,40 @@ any MCP client (Claude Desktop, Claude Code, etc). Built on the
 [`hoodgrow`](https://github.com/MeMikko/hoodgrow-ts) SDK — pays per call via
 **x402** (USDC on Base) or uses a bearer API key, your choice.
 
-## Setup
+## Fastest: the hosted server (no install, no key)
 
-You need credentials — this package never bundles a shared HoodGrow
-credential, you supply your own so you control what gets spent and who's
-billed. Pick one:
+HoodGrow runs the MCP server for you at **`https://www.hoodgrow.com/api/mcp`**.
+Every tool is read-only, so you can point an assistant at it and start asking
+with **no install, no signup, no key**:
+
+```bash
+claude mcp add --transport http hoodgrow https://www.hoodgrow.com/api/mcp
+```
+
+or in `mcp.json` / `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "hoodgrow": { "type": "http", "url": "https://www.hoodgrow.com/api/mcp" }
+  }
+}
+```
+
+Then ask your assistant things like:
+
+- *"What's the corporate-action adjusted supply and 24h volume for NVDA on Robinhood Chain?"*
+- *"Any pending stock splits or dividends in the next week?"*
+- *"Top gainers and biggest whale trades today."*
+
+Anonymous access is rate-limited per IP; add a free API key (below) for a
+higher quota. Prefer running the server yourself, or need x402 pay-per-call?
+Use the npm package instead:
+
+## Run it yourself (npm — your own credentials)
+
+You supply your own credentials — this package never bundles a shared HoodGrow
+credential, so you control what gets spent and who's billed. Pick one:
 
 - **x402, pay per call, no signup** — a wallet private key (`HOODGROW_PRIVATE_KEY`),
   funded with USDC on Base. $0.10/call for the full catalog, $0.05/call for
