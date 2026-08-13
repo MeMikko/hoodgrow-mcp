@@ -1,11 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { privateKeyToAccount } from "viem/accounts";
 
-import { createServer } from "../src/server.js";
+import { createServer, SERVER_VERSION } from "../src/server.js";
 import { clientOptionsFromEnv } from "../src/config.js";
 
 /** Well-known public test private key (Hardhat/Anvil default account #0) —
@@ -450,4 +451,32 @@ test("register_credit_webhook POSTs url + symbols with a signer and returns the 
     webhookUrl: "https://example.com/hook",
     webhookSymbols: ["NVDA", "INTC"],
   });
+});
+
+test("the version the server reports matches the published package version", async () => {
+  // These drifted to 0.4.0 vs 0.7.1 — three releases apart — because nothing
+  // read one back against the other. A client asking the server what it is
+  // got a wrong answer, and any version-gated client behaviour keyed off it.
+  const pkg = JSON.parse(
+    await readFile(new URL("../package.json", import.meta.url), "utf8")
+  ) as { version: string };
+  assert.equal(SERVER_VERSION, pkg.version);
+});
+
+test("server.json stays in lockstep with package.json for the registry publish", async () => {
+  // DISTRIBUTION.md requires it: mcp-publisher pushes server.json to the
+  // official registry, so a mismatch publishes an entry claiming one version
+  // while pointing at another on npm. server.json's own version had already
+  // drifted ahead (0.7.2) of both package.json and its packages[] entry.
+  const [pkg, server] = await Promise.all([
+    readFile(new URL("../package.json", import.meta.url), "utf8"),
+    readFile(new URL("../server.json", import.meta.url), "utf8"),
+  ]);
+  const version = (JSON.parse(pkg) as { version: string }).version;
+  const sj = JSON.parse(server) as {
+    version: string;
+    packages: { version: string }[];
+  };
+  assert.equal(sj.version, version);
+  for (const entry of sj.packages) assert.equal(entry.version, version);
 });

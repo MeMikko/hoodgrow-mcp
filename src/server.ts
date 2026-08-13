@@ -23,12 +23,28 @@ function errorResult(error: unknown): CallToolResult {
  * separate from the stdio entrypoint (index.ts) so tests can call tool
  * handlers directly without spinning up a transport.
  */
+/**
+ * The version this server reports to MCP clients.
+ *
+ * Was pinned at "0.4.0" while the package shipped 0.7.1 — three releases of
+ * drift, invisible because nothing reads it back. A client asking the server
+ * what it is got a wrong answer, and version-gated behaviour on the client
+ * side would have keyed off it.
+ *
+ * Kept as a literal rather than imported from package.json: under NodeNext
+ * that needs resolveJsonModule plus an import assertion, and package.json sits
+ * outside dist/ so the emitted path differs from the source path. A test
+ * asserts this equals package.json instead, which catches the drift without
+ * complicating the build.
+ */
+export const SERVER_VERSION = "0.8.0";
+
 export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
   const client = new HoodGrowClient(clientOptions);
 
   const server = new McpServer({
     name: "hoodgrow-mcp",
-    version: "0.4.0",
+    version: SERVER_VERSION,
   });
 
   // Every tool declares all four MCP behaviour hints as explicit booleans —
