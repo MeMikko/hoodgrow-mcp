@@ -21,7 +21,7 @@
       "environmentVariables": [
         {
           "name": "HOODGROW_API_KEY",
-          "description": "Bearer API key issued by HoodGrow (DM https://x.com/hoodgrow). Optional if HOODGROW_PRIVATE_KEY is set instead.",
+          "description": "Bearer API key issued by HoodGrow (https://www.hoodgrow.com/api-access). Optional if HOODGROW_PRIVATE_KEY is set instead.",
           "isRequired": false,
           "isSecret": true
         },
@@ -34,6 +34,12 @@
         {
           "name": "HOODGROW_USE_CREDITS",
           "description": "Set to \"true\" (only meaningful alongside HOODGROW_PRIVATE_KEY) to spend a prepaid credit balance instead of paying x402 per call — buy one first with the buy_credits tool.",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "HOODGROW_BASE_URL",
+          "description": "Override the API base URL (default https://www.hoodgrow.com) — for testing against a non-production deployment.",
           "isRequired": false,
           "isSecret": false
         }
