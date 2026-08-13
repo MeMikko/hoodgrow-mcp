@@ -42,7 +42,7 @@ function errorResult(error: unknown): CallToolResult {
  * asserts this equals package.json instead, which catches the drift without
  * complicating the build.
  */
-export const SERVER_VERSION = "0.8.1";
+export const SERVER_VERSION = "0.8.2";
 
 /**
  * What this package reports to the API, with the SDK it wraps kept visible.
@@ -118,8 +118,10 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
  * are, so a tool asserts only what it actually returns.
  */
 const PROV_PRICE =
-  " Prices are read from Chainlink feeds on-chain, not relayed; responses carry " +
-  "priceSource and observedAt so origin and freshness are checkable per field.";
+  " Prices are read from Chainlink feeds on-chain, not relayed from an off-chain " +
+  "aggregator, and refreshed every 15 minutes — each response is that snapshot, " +
+  "with observedAt giving its exact age. priceSource says which tokens resolved " +
+  "a feed and which fell back.";
 
 const PROV_SUPPLY =
   " Supply is corporate-action adjusted (totalSupply x ERC-8056 uiMultiplier), " +
@@ -138,7 +140,8 @@ const PROV_HOLDERS =
   "on-chain supply snapshots.";
 
 const PROV_SLIPPAGE =
-  " Computed from live Uniswap V3 pool state per pool — an estimate derived from " +
+  " Computed per pool from the most recent Uniswap V3 pool snapshot (refreshed " +
+  "every 15 minutes, not read live at request time) — an estimate derived from " +
   "reserves, not a quoted or executable price.";
 
 const PROV_TRADES =
