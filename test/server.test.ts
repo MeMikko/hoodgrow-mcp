@@ -6,7 +6,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { privateKeyToAccount } from "viem/accounts";
 
-import { createServer, SERVER_VERSION } from "../src/server.js";
+import { CLIENT_USER_AGENT, createServer, SERVER_VERSION } from "../src/server.js";
 import { clientOptionsFromEnv } from "../src/config.js";
 
 /** Well-known public test private key (Hardhat/Anvil default account #0) —
@@ -479,4 +479,13 @@ test("server.json stays in lockstep with package.json for the registry publish",
   };
   assert.equal(sj.version, version);
   for (const entry of sj.packages) assert.equal(entry.version, version);
+});
+
+test("the client identifies this package, with the SDK it wraps still visible", async () => {
+  // hoodgrow >=0.12.0 sends its own hoodgrow-ts/<version> User-Agent. Left
+  // alone, every MCP tool call would report as a plain SDK integration and
+  // the API could no longer tell "using the MCP server" from "using the SDK
+  // directly" — one bucket where there should be two.
+  assert.match(CLIENT_USER_AGENT, /^hoodgrow-mcp\/\d+\.\d+\.\d+ \(hoodgrow-ts\/\d+\.\d+\.\d+\)$/);
+  assert.ok(CLIENT_USER_AGENT.startsWith(`hoodgrow-mcp/${SERVER_VERSION}`));
 });

@@ -1,7 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { HoodGrowClient, HoodGrowError, type HoodGrowClientOptions } from "hoodgrow";
+import {
+  HoodGrowClient,
+  HoodGrowError,
+  SDK_VERSION,
+  type HoodGrowClientOptions,
+} from "hoodgrow";
 
 function textResult(value: unknown): CallToolResult {
   return { content: [{ type: "text", text: JSON.stringify(value, null, 2) }] };
@@ -37,10 +42,31 @@ function errorResult(error: unknown): CallToolResult {
  * asserts this equals package.json instead, which catches the drift without
  * complicating the build.
  */
-export const SERVER_VERSION = "0.8.0";
+export const SERVER_VERSION = "0.8.1";
+
+/**
+ * What this package reports to the API, with the SDK it wraps kept visible.
+ *
+ * A named constant rather than an inline template so a test can assert it:
+ * if someone drops the userAgent option in a refactor, attribution silently
+ * reverts to plain SDK traffic and nothing fails — the failure would surface
+ * weeks later as a usage chart that stopped distinguishing MCP users.
+ */
+export const CLIENT_USER_AGENT = `hoodgrow-mcp/${SERVER_VERSION} (hoodgrow-ts/${SDK_VERSION})`;
 
 export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
-  const client = new HoodGrowClient(clientOptions);
+  // Identify this package rather than the SDK it wraps. hoodgrow >=0.12.0
+  // sends its own `hoodgrow-ts/<version>` User-Agent, which would report
+  // every MCP tool call as a plain SDK integration — collapsing "someone is
+  // using the MCP server" and "someone is using the SDK directly" into one
+  // indistinguishable bucket in the API's usage ledger. The SDK stays visible
+  // in parentheses so both layers are attributable from one header.
+  //
+  // A caller's own userAgent still wins: clientOptions is spread last.
+  const client = new HoodGrowClient({
+    userAgent: CLIENT_USER_AGENT,
+    ...clientOptions,
+  });
 
   const server = new McpServer({
     name: "hoodgrow-mcp",
