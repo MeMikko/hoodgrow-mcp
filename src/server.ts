@@ -58,6 +58,55 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
     openWorldHint: true,
   } as const;
 
+/**
+ * Provenance clauses, mirroring the per-route ones the API publishes in its
+ * x402 descriptions.
+ *
+ * An MCP client lists these strings and nothing else when it decides which
+ * server's tool to reach for. Asked what it could see before paying, a
+ * connected agent read back exactly these descriptions — price and a summary
+ * of the fields, with no indication of where the numbers come from. That is
+ * why $0.05 reads as expensive next to relayed feeds charging a tenth of it:
+ * at the point of choice, nothing distinguishes them.
+ *
+ * ONE CLAIM PER CONSTANT, composed per tool. An earlier attempt bundled
+ * "Chainlink prices AND multiplier-adjusted supply" into a single clause and
+ * then attached it to tools returning neither. The argument for this data is
+ * that its claims are checkable; a claim that isn't discredits the ones that
+ * are, so a tool asserts only what it actually returns.
+ */
+const PROV_PRICE =
+  " Prices are read from Chainlink feeds on-chain, not relayed; responses carry " +
+  "priceSource and observedAt so origin and freshness are checkable per field.";
+
+const PROV_SUPPLY =
+  " Supply is corporate-action adjusted (totalSupply x ERC-8056 uiMultiplier), " +
+  "not raw.";
+
+const PROV_CORPORATE_ACTIONS =
+  " Detected from the token contract's own ERC-8056 state every minute, ahead of " +
+  "the official registry's cache, which is mirrored alongside for history.";
+
+const PROV_DEFI =
+  " Morpho market and Uniswap V3 pool state, read on-chain and snapshotted every " +
+  "15 minutes.";
+
+const PROV_HOLDERS =
+  " Explorer-sourced, refreshed every 4 hours; supply changes derived from " +
+  "on-chain supply snapshots.";
+
+const PROV_SLIPPAGE =
+  " Computed from live Uniswap V3 pool state per pool — an estimate derived from " +
+  "reserves, not a quoted or executable price.";
+
+const PROV_TRADES =
+  " Indexed from Uniswap V3 Swap events on-chain; side and USD size are derived " +
+  "from the USDG leg of each swap.";
+
+const PROV_BASE =
+  " Read directly from the token contracts on Base (chain 8453) and refreshed " +
+  "every 4 hours; status reflects on-chain totalSupply().";
+
   server.registerTool(
     "get_catalog",
     {
@@ -66,7 +115,10 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
         "Full catalog of Robinhood Chain stock tokens: live price, corporate-action " +
         "adjusted supply, DeFi depth (best Morpho supply APY, Uniswap V3 TVL), and " +
         "pending/recent corporate actions for every listed token. Paid per call " +
-        "($0.10 via x402, free with an API key) — prefer get_token for a single symbol.",
+        "($0.10 via x402, free with an API key) — prefer get_token for a single symbol." +
+        PROV_PRICE +
+        PROV_SUPPLY +
+        PROV_CORPORATE_ACTIONS,
       inputSchema: {},
       annotations: READ,
     },
@@ -87,7 +139,10 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
         "One Robinhood Chain stock token by symbol (e.g. NVDA): live price, " +
         "corporate-action adjusted supply, DeFi depth, and pending/recent " +
         "corporate actions. Cheaper than get_catalog for a single spot check " +
-        "($0.05 via x402, free with an API key). Fails for an unknown symbol.",
+        "($0.05 via x402, free with an API key). Fails for an unknown symbol." +
+        PROV_PRICE +
+        PROV_SUPPLY +
+        PROV_CORPORATE_ACTIONS,
       inputSchema: {
         symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
       },
@@ -109,7 +164,8 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
       description:
         "Pending (on-chain staged) and recent (official Robinhood ledger) corporate " +
         "actions — splits, dividends, name changes. Pass a symbol to scope to one " +
-        "token (cheaper); omit it for every tracked token's corporate actions.",
+        "token (cheaper); omit it for every tracked token's corporate actions." +
+        PROV_CORPORATE_ACTIONS,
       inputSchema: {
         symbol: z
           .string()
@@ -136,7 +192,8 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
         "Every Morpho lending market (as loan asset OR collateral, both roles labeled) " +
         "and Uniswap V3 pool involving one token — the full picture for comparing yield/ " +
         "borrow options, not just the single best-APY figure in get_catalog/get_token. " +
-        "$0.05 via x402, free with an API key. Fails for an unknown symbol.",
+        "$0.05 via x402, free with an API key. Fails for an unknown symbol." +
+        PROV_DEFI,
       inputSchema: {
         symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
       },
@@ -159,7 +216,8 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
         "Holder-count trend, 24h net total_supply change (real mint/burn — creation/ " +
         "redemption of the underlying tokenized shares, distinct from a corporate-action " +
         "multiplier change), and top-holder concentration for one token. $0.05 via x402, " +
-        "free with an API key. Fails for an unknown symbol.",
+        "free with an API key. Fails for an unknown symbol." +
+        PROV_HOLDERS,
       inputSchema: {
         symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
         limit: z
@@ -192,7 +250,8 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
         "Exact within each pool's currently active tick range; a likelyCrossesTick flag " +
         "on a result means the trade is probably large enough that this may understate " +
         "real slippage — consider splitting into smaller tranches (TWAP) instead. " +
-        "$0.05 via x402, free with an API key. Fails for an unknown symbol.",
+        "$0.05 via x402, free with an API key. Fails for an unknown symbol." +
+        PROV_SLIPPAGE,
       inputSchema: {
         symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
         amountUsd: z.number().positive().describe("Trade size in USD."),
@@ -221,7 +280,8 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
         "swap volume across the token's Uniswap V3 pools, null for buckets older than " +
         "the volume indexer's backfill window. Defaults to the last 30 days if from/to " +
         "are omitted; window capped at 730 days. $0.05 via x402, free with an API key. " +
-        "Fails for an unknown symbol.",
+        "Fails for an unknown symbol." +
+        PROV_PRICE,
       inputSchema: {
         symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
         interval: z.enum(["1h", "4h", "1d"]).describe("Candle bucket size."),
@@ -257,7 +317,8 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
         "zero minted supply — no price, no DEX liquidity, no holders exist yet. " +
         "status flips to \"live\" automatically once totalSupply() > 0 on-chain; " +
         "do not treat a pre_launch entry as tradable. $0.05 via x402, free with " +
-        "an API key.",
+        "an API key." +
+        PROV_BASE,
       inputSchema: {},
       annotations: READ,
     },
@@ -278,7 +339,9 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
         "Market movers across the Robinhood Chain stock-token catalog: top gainers and " +
         "losers by 24h price change, highest 24h swap volume, and deepest Uniswap V3 " +
         "liquidity (TVL). limit caps each list (1-50, default 10); gainers/losers can be " +
-        "empty when the market is flat (e.g. weekends). $0.05 via x402, free with an API key.",
+        "empty when the market is flat (e.g. weekends). $0.05 via x402, free with an API key." +
+        PROV_PRICE +
+        PROV_DEFI,
       inputSchema: {
         limit: z
           .number()
@@ -307,7 +370,8 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
         "Recent large (whale) trades in Robinhood Chain stock-token Uniswap V3 pools, " +
         "newest first — each with a buy/sell side, USD size, and transaction hash. Omit " +
         "symbol for the global feed. limit caps the list (1-100, default 20). $0.05 via " +
-        "x402, free with an API key.",
+        "x402, free with an API key." +
+        PROV_TRADES,
       inputSchema: {
         symbol: z
           .string()
