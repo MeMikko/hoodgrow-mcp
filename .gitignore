@@ -3,3 +3,8 @@ dist/
 *.tsbuildinfo
 .env
 .env.local
+
+# The MCP registry publisher CLI — downloaded on demand (CI fetches its own
+# copy at publish time). A 20 MB unverifiable binary does not belong in git.
+mcp-publisher
+mcp-publisher.exe
