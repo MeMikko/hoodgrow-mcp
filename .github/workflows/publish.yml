@@ -22,7 +22,17 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # 22, matching the API repo's CI. Node 20 went end-of-life, so the
+          # build and tests that gate a publish were running on a Node that no
+          # longer receives security fixes.
+          #
+          # NOT the same thing as the "Node.js 20 is deprecated" warning in the
+          # run log — that one is about the runtime the ACTIONS themselves
+          # execute on (actions/checkout@v4 and actions/setup-node@v4 are
+          # Node20 actions, currently force-run on Node 24 by the runner).
+          # Silencing it means moving those to @v5, which is a separate change
+          # and deliberately not bundled into a release-critical workflow.
+          node-version: 22
           registry-url: https://registry.npmjs.org
 
       - run: npm ci
