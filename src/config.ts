@@ -31,8 +31,8 @@ export function clientOptionsFromEnv(env: NodeJS.ProcessEnv = process.env): Hood
     return { signer, useCredits, ...(baseUrl ? { baseUrl } : {}) };
   }
   throw new Error(
-    "hoodgrow-mcp needs credentials: set HOODGROW_API_KEY (free, issued at " +
-      "https://www.hoodgrow.com/api-access) or HOODGROW_PRIVATE_KEY (a wallet " +
+    "hoodgrow-mcp needs credentials: set HOODGROW_API_KEY (free, self-serve at " +
+      "https://www.hoodgrow.com/profile) or HOODGROW_PRIVATE_KEY (a wallet " +
       "private key that pays per call via x402 — USDC on Base, only fund it " +
       "with what you're willing to spend on this API)."
   );

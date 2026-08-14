@@ -51,8 +51,8 @@ credential, so you control what gets spent and who's billed. Pick one:
 - **x402, pay per call, no signup** — a wallet private key (`HOODGROW_PRIVATE_KEY`),
   funded with USDC on Base. $0.10/call for the full catalog, $0.05/call for
   one token.
-- **API key, free, issued access** — `HOODGROW_API_KEY` from
-  [hoodgrow.com/api-access](https://www.hoodgrow.com/api-access).
+- **API key, free, self-serve** — `HOODGROW_API_KEY` from
+  [hoodgrow.com/profile](https://www.hoodgrow.com/profile).
 
 ### Claude Desktop / Claude Code
 
@@ -145,7 +145,7 @@ the signing wallet with.
 30 requests/minute per IP by default for pay-per-call use. Need more
 sustained throughput? A persistent API key with its own higher limit is
 available — see
-[hoodgrow.com/api-access](https://www.hoodgrow.com/api-access).
+[docs.hoodgrow.com](https://docs.hoodgrow.com).
 
 ## Development
 

@@ -489,3 +489,32 @@ test("the client identifies this package, with the SDK it wraps still visible", 
   assert.match(CLIENT_USER_AGENT, /^hoodgrow-mcp\/\d+\.\d+\.\d+ \(hoodgrow-ts\/\d+\.\d+\.\d+\)$/);
   assert.ok(CLIENT_USER_AGENT.startsWith(`hoodgrow-mcp/${SERVER_VERSION}`));
 });
+
+test("read tools drop idempotentHint when every call costs money", async () => {
+  // No bearer key means each read is a fresh x402 payment or a credit
+  // spend, and this server sends no Idempotency-Key — so the API cannot
+  // collapse a retry either. A host that retried a timed-out call on the
+  // strength of the hint would pay twice for one logical read.
+  const { client } = await connectedClient({ signer: TEST_ACCOUNT });
+  const { tools } = await client.listTools();
+  const hint = (name: string) =>
+    ((tools.find((t) => t.name === name)?.annotations ?? {}) as Record<string, unknown>)
+      .idempotentHint;
+
+  assert.equal(hint("get_catalog"), false);
+  assert.equal(hint("get_token"), false);
+  assert.equal(hint("get_corporate_actions"), false);
+});
+
+test("read tools keep idempotentHint with a bearer key — those calls are free", async () => {
+  const { client } = await connectedClient({ apiKey: "test-key" });
+  const { tools } = await client.listTools();
+  const hint = (name: string) =>
+    ((tools.find((t) => t.name === name)?.annotations ?? {}) as Record<string, unknown>)
+      .idempotentHint;
+
+  assert.equal(hint("get_catalog"), true);
+  assert.equal(hint("get_token"), true);
+  // buy_credits pays on every call however the reads are authenticated.
+  assert.equal(hint("buy_credits"), false);
+});
