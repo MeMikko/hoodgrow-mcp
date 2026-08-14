@@ -76,11 +76,24 @@ export function createServer(clientOptions: HoodGrowClientOptions): McpServer {
   // Every tool declares all four MCP behaviour hints as explicit booleans —
   // some registries (e.g. OpenAI's directory) reject tools where any hint is
   // missing or non-boolean. Shared constants keep them consistent.
-  // READ: pure data reads — safe, repeatable, hit an external API/chain.
+  // Does each data call move money? A bearer key spends quota, not funds.
+  // Without one, every call is either a fresh x402 payment or a spend
+  // against a prepaid credit balance.
+  const paidPerCall = !clientOptions.apiKey;
+
+  // READ: pure data reads — safe, hit an external API/chain.
+  //
+  // idempotentHint is NOT a blanket true here. MCP defines it as "repeated
+  // calls with the same arguments have no additional effect on the
+  // environment", and in paid mode that is false: the second call pays
+  // again. This server sends no `Idempotency-Key`, so the API cannot
+  // collapse the retry either — a host that treats the hint as licence to
+  // retry a timed-out call would pay twice for one logical read. With a
+  // bearer key the calls are free and the hint is honestly true.
   const READ = {
     readOnlyHint: true,
     destructiveHint: false,
-    idempotentHint: true,
+    idempotentHint: !paidPerCall,
     openWorldHint: true,
   } as const;
   // PAY: buy_credits makes a real, irreversible x402 payment — not read-only,
