@@ -1,6 +1,6 @@
 {
   "name": "hoodgrow-mcp",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "description": "MCP server for the HoodGrow Robinhood Chain (and Base B20) stock token API — get_catalog, get_token, get_corporate_actions, get_defi, get_holders, get_slippage, get_ohlc, get_base_tokens, get_markets, get_trades, list_credit_bundles, buy_credits, get_credit_balance, register_credit_webhook as tools for any MCP client (Claude Desktop, Claude Code, etc). Wraps the hoodgrow npm SDK; pays per call via x402, a bearer API key, or a prepaid credit balance.",
   "type": "module",
   "bin": {
