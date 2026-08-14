@@ -42,7 +42,7 @@ function errorResult(error: unknown): CallToolResult {
  * asserts this equals package.json instead, which catches the drift without
  * complicating the build.
  */
-export const SERVER_VERSION = "0.8.2";
+export const SERVER_VERSION = "0.8.3";
 
 /**
  * What this package reports to the API, with the SDK it wraps kept visible.
