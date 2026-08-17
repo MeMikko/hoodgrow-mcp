@@ -55,7 +55,7 @@ Keep `server.json`'s `version` and `packages[].version` in lockstep with
 
 | Registry | How to submit | Status |
 |---|---|---|
-| **Official MCP Registry** (registry.modelcontextprotocol.io) | `server.json` ready → `mcp-publisher publish` | ☐ |
+| **Official MCP Registry** (registry.modelcontextprotocol.io) | Automatic — publish.yml runs `mcp-publisher publish` on every release | ☑ live since 2026-08-07 |
 | **modelcontextprotocol/servers** (official "community servers" list) | PR adding a row to the README | ☐ |
 | **mcp.so** | Submit form at mcp.so | ☐ |
 | **Glama** (glama.ai/mcp/servers) | Auto-indexes from GitHub; add MCP topic + a `glama.json`; claim the listing | ☐ |
