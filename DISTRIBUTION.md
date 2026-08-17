@@ -57,8 +57,8 @@ Keep `server.json`'s `version` and `packages[].version` in lockstep with
 |---|---|---|
 | **Official MCP Registry** (registry.modelcontextprotocol.io) | Automatic — publish.yml runs `mcp-publisher publish` on every release | ☑ live since 2026-08-07 |
 | **modelcontextprotocol/servers** (official "community servers" list) | PR adding a row to the README | ☐ |
-| **mcp.so** | Submit form at mcp.so | ☐ |
-| **Glama** (glama.ai/mcp/servers) | Auto-indexes from GitHub; add MCP topic + a `glama.json`; claim the listing | ☐ |
+| **mcp.so** | Submit form at mcp.so | ⏭️ skipped — listing costs $39, and it is the least curated of the directories (~20k servers), so it is the worst value of the set. Revisit only if the free four underdeliver |
+| **Glama** (glama.ai/mcp/servers) | Auto-indexed from GitHub; claimed via the Admin tab | ☑ claimed 2026-08-17 — author verified, A on license / coherence / tool definitions / maintenance |
 | **Smithery** (smithery.ai) | Connect the GitHub repo; add `smithery.yaml` if hosting there | ☐ |
 | **PulseMCP** (pulsemcp.com) | Submit form | ☐ |
 | **Awesome MCP Servers** (punkpeye/awesome-mcp-servers) | PR adding a bullet | ☐ |
@@ -67,10 +67,13 @@ Keep `server.json`'s `version` and `packages[].version` in lockstep with
 
 ### GitHub repo hygiene (helps auto-indexers)
 
-- ☐ Repo **description** set to the one-liner above.
-- ☐ Repo **topics**: the tags above.
-- ☐ README leads with the hosted no-key quick-start (done).
-- ☐ A clear **license** (MIT).
+All four are done — verified against the GitHub API on 2026-08-17, not from
+memory. Left here as the checklist a future move or rename has to re-satisfy.
+
+- ☑ Repo **description** set to the one-liner above.
+- ☑ Repo **topics**: all ten of the tags above.
+- ☑ README leads with the hosted no-key quick-start.
+- ☑ A clear **license** (MIT).
 
 ### Ready-to-paste row for `modelcontextprotocol/servers`
 
@@ -80,12 +83,34 @@ Keep `server.json`'s `version` and `packages[].version` in lockstep with
   corporate actions, holders, slippage, OHLC, movers, and whale trades.
 ```
 
-### Ready-to-paste bullet for "awesome" lists
+### Ready-to-paste bullet for punkpeye/awesome-mcp-servers
+
+Category: **💰 - Finance & Fintech**. Check whether the neighbours are in
+alphabetical order before appending — that list is not uniformly sorted.
+
+The emoji are not decoration, they are that README's legend, and it was
+checked against the legend rather than guessed: `📇` is a TypeScript
+codebase and `☁️` is a cloud service. `🌐`, which an earlier version of this
+file used, is not in the legend at all — the most common reason one of
+these PRs sits unmerged. Note the plain hyphen before the description;
+established entries do not use an em dash.
 
 ```markdown
-- [hoodgrow-mcp](https://github.com/MeMikko/hoodgrow-mcp) 🌐 📇 — Verified
-  Robinhood Chain stock-token data (price, split-adjusted supply, DeFi,
-  corporate actions, movers, whale trades). Hosted (no key) or npm.
+- [MeMikko/hoodgrow-mcp](https://github.com/MeMikko/hoodgrow-mcp) [![hoodgrow-mcp MCP server](https://glama.ai/mcp/servers/MeMikko/hoodgrow-mcp/badges/score.svg)](https://glama.ai/mcp/servers/MeMikko/hoodgrow-mcp) 📇 ☁️ - Robinhood Chain stock-token data: live price, split-adjusted supply (ERC-8056), DeFi depth, corporate actions, holders, slippage, OHLC and whale trades. Hosted (no key) or npm; pay-per-call via x402.
+```
+
+### Glama badges
+
+Two variants, and they are not interchangeable. `score.svg` is the small
+inline badge that belongs in a list row or beside other badges;
+`card.svg` is a full-width card for a page that has room for it.
+
+```markdown
+<!-- inline (README badge row, awesome-list entries) -->
+[![hoodgrow-mcp MCP server](https://glama.ai/mcp/servers/MeMikko/hoodgrow-mcp/badges/score.svg)](https://glama.ai/mcp/servers/MeMikko/hoodgrow-mcp)
+
+<!-- full card (a page with space for it) -->
+[![hoodgrow-mcp MCP server](https://glama.ai/mcp/servers/MeMikko/hoodgrow-mcp/badges/card.svg)](https://glama.ai/mcp/servers/MeMikko/hoodgrow-mcp)
 ```
 
 ## Notes

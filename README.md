@@ -1,6 +1,7 @@
 # hoodgrow-mcp
 
 [![M8ven Verified](https://m8ven.ai/badge/mcp/memikko-hoodgrow-mcp-1ir3oo)](https://m8ven.ai/mcp/memikko-hoodgrow-mcp-1ir3oo)
+[![hoodgrow-mcp MCP server](https://glama.ai/mcp/servers/MeMikko/hoodgrow-mcp/badges/score.svg)](https://glama.ai/mcp/servers/MeMikko/hoodgrow-mcp)
 
 MCP ([Model Context Protocol](https://modelcontextprotocol.io)) server for the
 [HoodGrow](https://www.hoodgrow.com) Robinhood Chain stock token API — live
