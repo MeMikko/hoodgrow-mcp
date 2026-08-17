@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.MeMikko/hoodgrow-mcp",
   "description": "Robinhood Chain stock token data — price, split-adjusted supply, DeFi, corporate actions, movers.",
-  "version": "0.8.3",
-  "websiteUrl": "https://www.hoodgrow.com/api-access",
+  "version": "0.8.4",
+  "websiteUrl": "https://www.hoodgrow.com/mcp",
   "repository": {
     "url": "https://github.com/MeMikko/hoodgrow-mcp",
     "source": "github"
@@ -13,7 +13,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "hoodgrow-mcp",
-      "version": "0.8.3",
+      "version": "0.8.4",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"
@@ -21,7 +21,7 @@
       "environmentVariables": [
         {
           "name": "HOODGROW_API_KEY",
-          "description": "Bearer API key issued by HoodGrow (https://www.hoodgrow.com/api-access). Optional if HOODGROW_PRIVATE_KEY is set instead.",
+          "description": "Free bearer API key from https://www.hoodgrow.com/profile. Optional if HOODGROW_PRIVATE_KEY is set instead.",
           "isRequired": false,
           "isSecret": true
         },
