@@ -59,9 +59,9 @@ Keep `server.json`'s `version` and `packages[].version` in lockstep with
 | **modelcontextprotocol/servers** (official "community servers" list) | PR adding a row to the README | ☐ |
 | **mcp.so** | Submit form at mcp.so | ⏭️ skipped — listing costs $39, and it is the least curated of the directories (~20k servers), so it is the worst value of the set. Revisit only if the free four underdeliver |
 | **Glama** (glama.ai/mcp/servers) | Auto-indexed from GitHub; claimed via the Admin tab | ☑ claimed 2026-08-17 — author verified, A on license / coherence / tool definitions / maintenance |
-| **Smithery** (smithery.ai) | Connect the GitHub repo; add `smithery.yaml` if hosting there | ☐ |
-| **PulseMCP** (pulsemcp.com) | Submit form | ☐ |
-| **Awesome MCP Servers** (punkpeye/awesome-mcp-servers) | PR adding a bullet | ☐ |
+| **Smithery** (smithery.ai) | Listed as a REMOTE server pointing at the hosted URL — no `smithery.yaml`, since Smithery isn't hosting it | ☑ 2026-08-17 |
+| **PulseMCP** (pulsemcp.com) | Submit form | ⏸️ deferred, not declined — it is free and hand-reviewed, which makes it worth more than mcp.so, just not done yet |
+| **Awesome MCP Servers** (punkpeye/awesome-mcp-servers) | PR adding a bullet to 💰 Finance & Fintech. Agents opt into the fast-track by ending the PR title with 🤖🤖🤖 (see their CONTRIBUTING.md) | ⏳ [PR #12315](https://github.com/punkpeye/awesome-mcp-servers/pull/12315) open — bot labelled it `has-emoji` `has-glama` `valid-name`, checks green |
 | **MCP.run / other aggregators** | As they appear | ☐ |
 | **npm** | Already published — keep `keywords` in package.json current | ☑ |
 
@@ -85,18 +85,26 @@ memory. Left here as the checklist a future move or rename has to re-satisfy.
 
 ### Ready-to-paste bullet for punkpeye/awesome-mcp-servers
 
-Category: **💰 - Finance & Fintech**. Check whether the neighbours are in
-alphabetical order before appending — that list is not uniformly sorted.
+Category: **💰 - Finance & Fintech**, and new entries go at the TOP of it.
+CONTRIBUTING.md asks for alphabetical order, but the section does not work
+that way in practice: the newest ~35 entries sit unsorted above an older
+alphabetical body, which is where the last 35 contributors put theirs.
+Inserting alphabetically would land the row in the middle of an unsorted
+block and read as arbitrary.
 
-The emoji are not decoration, they are that README's legend, and it was
-checked against the legend rather than guessed: `📇` is a TypeScript
-codebase and `☁️` is a cloud service. `🌐`, which an earlier version of this
-file used, is not in the legend at all — the most common reason one of
-these PRs sits unmerged. Note the plain hyphen before the description;
-established entries do not use an em dash.
+The emoji are not decoration, they are that README's legend, and they were
+checked against it rather than guessed: `📇` TypeScript codebase, `☁️` cloud
+service, `🏠` local service — all three, because the hosted server and
+`npx hoodgrow-mcp` are both real and neighbours offering both label both.
+`🌐`, which an earlier version of this file used, is not in the legend at
+all; a wrong emoji is the most common reason one of these PRs sits
+unmerged. Note the plain hyphen before the description — established
+entries do not use an em dash.
+
+The block below is byte-identical to the row PR #12315 actually submitted.
 
 ```markdown
-- [MeMikko/hoodgrow-mcp](https://github.com/MeMikko/hoodgrow-mcp) [![hoodgrow-mcp MCP server](https://glama.ai/mcp/servers/MeMikko/hoodgrow-mcp/badges/score.svg)](https://glama.ai/mcp/servers/MeMikko/hoodgrow-mcp) 📇 ☁️ - Robinhood Chain stock-token data: live price, split-adjusted supply (ERC-8056), DeFi depth, corporate actions, holders, slippage, OHLC and whale trades. Hosted (no key) or npm; pay-per-call via x402.
+- [MeMikko/hoodgrow-mcp](https://github.com/MeMikko/hoodgrow-mcp) [![hoodgrow-mcp MCP server](https://glama.ai/mcp/servers/MeMikko/hoodgrow-mcp/badges/score.svg)](https://glama.ai/mcp/servers/MeMikko/hoodgrow-mcp) 📇 ☁️ 🏠 - Tokenized-equity data for Robinhood Chain: live Chainlink price, split-adjusted supply read from each token's on-chain ERC-8056 multiplier (so it stays correct through stock splits), Morpho/Uniswap depth, corporate actions, holders, slippage, OHLC candles, market movers and whale trades. Hosted with no key and no signup at https://www.hoodgrow.com/api/mcp, or `npx hoodgrow-mcp` with a free API key or x402 pay-per-call (USDC on Base).
 ```
 
 ### Glama badges
