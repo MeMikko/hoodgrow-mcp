@@ -42,7 +42,7 @@ function errorResult(error: unknown): CallToolResult {
  * asserts this equals package.json instead, which catches the drift without
  * complicating the build.
  */
-export const SERVER_VERSION = "0.8.4";
+export const SERVER_VERSION = "0.8.5";
 
 /**
  * What this package reports to the API, with the SDK it wraps kept visible.
@@ -173,7 +173,8 @@ const PROV_BASE =
         "Full catalog of Robinhood Chain stock tokens: live price, corporate-action " +
         "adjusted supply, DeFi depth (best Morpho supply APY, Uniswap V3 TVL), and " +
         "pending/recent corporate actions for every listed token. Paid per call " +
-        "($0.10 via x402, free with an API key) — prefer get_token for a single symbol." +
+        "($0.10 via x402; with a free API key it spends 10 of the 40 daily units, " +
+        "so 4 calls/day) — prefer get_token for a single symbol, which costs 1." +
         PROV_PRICE +
         PROV_SUPPLY +
         PROV_CORPORATE_ACTIONS,
@@ -197,7 +198,8 @@ const PROV_BASE =
         "One Robinhood Chain stock token by symbol (e.g. NVDA): live price, " +
         "corporate-action adjusted supply, DeFi depth, and pending/recent " +
         "corporate actions. Cheaper than get_catalog for a single spot check " +
-        "($0.05 via x402, free with an API key). Fails for an unknown symbol." +
+        "($0.05 via x402, or 1 of the 40 daily units with a free API key). Fails for an " +
+        "unknown symbol." +
         PROV_PRICE +
         PROV_SUPPLY +
         PROV_CORPORATE_ACTIONS,
@@ -250,7 +252,7 @@ const PROV_BASE =
         "Every Morpho lending market (as loan asset OR collateral, both roles labeled) " +
         "and Uniswap V3 pool involving one token — the full picture for comparing yield/ " +
         "borrow options, not just the single best-APY figure in get_catalog/get_token. " +
-        "$0.05 via x402, free with an API key. Fails for an unknown symbol." +
+        "$0.05 via x402, or 1 daily unit with a free API key. Fails for an unknown symbol." +
         PROV_DEFI,
       inputSchema: {
         symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
@@ -274,7 +276,7 @@ const PROV_BASE =
         "Holder-count trend, 24h net total_supply change (real mint/burn — creation/ " +
         "redemption of the underlying tokenized shares, distinct from a corporate-action " +
         "multiplier change), and top-holder concentration for one token. $0.05 via x402, " +
-        "free with an API key. Fails for an unknown symbol." +
+        "or 1 daily unit with a free API key. Fails for an unknown symbol." +
         PROV_HOLDERS,
       inputSchema: {
         symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
@@ -308,7 +310,7 @@ const PROV_BASE =
         "Exact within each pool's currently active tick range; a likelyCrossesTick flag " +
         "on a result means the trade is probably large enough that this may understate " +
         "real slippage — consider splitting into smaller tranches (TWAP) instead. " +
-        "$0.05 via x402, free with an API key. Fails for an unknown symbol." +
+        "$0.05 via x402, or 1 daily unit with a free API key. Fails for an unknown symbol." +
         PROV_SLIPPAGE,
       inputSchema: {
         symbol: z.string().min(1).describe("Ticker symbol, e.g. \"NVDA\" (case-insensitive)."),
@@ -337,7 +339,8 @@ const PROV_BASE =
         "collected every ~15 min. Each candle also carries volumeUsd/swapCount — USD " +
         "swap volume across the token's Uniswap V3 pools, null for buckets older than " +
         "the volume indexer's backfill window. Defaults to the last 30 days if from/to " +
-        "are omitted; window capped at 730 days. $0.05 via x402, free with an API key. " +
+        "are omitted; window capped at 730 days. $0.05 via x402, or 1 daily unit with a " +
+        "free API key. " +
         "Fails for an unknown symbol." +
         PROV_PRICE,
       inputSchema: {
@@ -374,8 +377,8 @@ const PROV_BASE =
         "tokens, plus a liveness signal. PRE-LAUNCH: every token currently has " +
         "zero minted supply — no price, no DEX liquidity, no holders exist yet. " +
         "status flips to \"live\" automatically once totalSupply() > 0 on-chain; " +
-        "do not treat a pre_launch entry as tradable. $0.05 via x402, free with " +
-        "an API key." +
+        "do not treat a pre_launch entry as tradable. $0.05 via x402, or 1 daily unit " +
+        "with a free API key." +
         PROV_BASE,
       inputSchema: {},
       annotations: READ,
@@ -397,7 +400,8 @@ const PROV_BASE =
         "Market movers across the Robinhood Chain stock-token catalog: top gainers and " +
         "losers by 24h price change, highest 24h swap volume, and deepest Uniswap V3 " +
         "liquidity (TVL). limit caps each list (1-50, default 10); gainers/losers can be " +
-        "empty when the market is flat (e.g. weekends). $0.05 via x402, free with an API key." +
+        "empty when the market is flat (e.g. weekends). $0.05 via x402, or 1 daily unit " +
+        "with a free API key." +
         PROV_PRICE +
         PROV_DEFI,
       inputSchema: {
@@ -428,7 +432,7 @@ const PROV_BASE =
         "Recent large (whale) trades in Robinhood Chain stock-token Uniswap V3 pools, " +
         "newest first — each with a buy/sell side, USD size, and transaction hash. Omit " +
         "symbol for the global feed. limit caps the list (1-100, default 20). $0.05 via " +
-        "x402, free with an API key." +
+        "x402, or 1 daily unit with a free API key." +
         PROV_TRADES,
       inputSchema: {
         symbol: z

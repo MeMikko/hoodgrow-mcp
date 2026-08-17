@@ -40,8 +40,11 @@ Then ask your assistant things like:
 - *"Any pending stock splits or dividends in the next week?"*
 - *"Top gainers and biggest whale trades today."*
 
-Anonymous access is rate-limited per IP; add a free API key (below) for a
-higher quota. Prefer running the server yourself, or need x402 pay-per-call?
+Anonymous access is bounded per IP — 20 requests/minute and 30 daily units,
+where a full-catalog call costs 10 units and a single-symbol call costs 1.
+Enough to work through a conversation; a free API key (below) raises the
+ceiling to 40 units and gives you a budget nobody else behind your IP can
+spend. Prefer running the server yourself, or need x402 pay-per-call?
 Use the npm package instead:
 
 ## Run it yourself (npm — your own credentials)
@@ -143,10 +146,23 @@ the signing wallet with.
 
 ## Rate limits
 
-30 requests/minute per IP by default for pay-per-call use. Need more
-sustained throughput? A persistent API key with its own higher limit is
-available — see
-[docs.hoodgrow.com](https://docs.hoodgrow.com).
+30 requests/minute per IP by default for pay-per-call use.
+
+With a **free API key**, the daily allowance is 40 units and is weighted by
+what a call returns, not by how many calls you make:
+
+| Call | Units | Free-tier calls/day |
+|---|---|---|
+| `get_catalog` (every token in one response) | 10 | 4 |
+| Any single-symbol tool | 1 | 40 |
+| Liveness check | 0 | unmetered |
+
+So prefer `get_token` over `get_catalog` when you want one symbol — it is
+ten times cheaper against the allowance and returns less to parse.
+
+**x402 pay-per-call** has no daily cap at all ($0.10 for the catalog, $0.05
+per symbol), and **Builder** removes the cap and raises the per-minute limit
+to 300 — see [docs.hoodgrow.com](https://docs.hoodgrow.com).
 
 ## Development
 
