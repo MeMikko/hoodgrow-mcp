@@ -42,7 +42,7 @@ function errorResult(error: unknown): CallToolResult {
  * asserts this equals package.json instead, which catches the drift without
  * complicating the build.
  */
-export const SERVER_VERSION = "0.8.5";
+export const SERVER_VERSION = "0.9.0";
 
 /**
  * What this package reports to the API, with the SDK it wraps kept visible.
@@ -170,11 +170,13 @@ const PROV_BASE =
     {
       title: "Get HoodGrow token catalog",
       description:
-        "Full catalog of Robinhood Chain stock tokens: live price, corporate-action " +
-        "adjusted supply, DeFi depth (best Morpho supply APY, Uniswap V3 TVL), and " +
-        "pending/recent corporate actions for every listed token. Paid per call " +
-        "($0.10 via x402; with a free API key it spends 10 of the 40 daily units, " +
-        "so 4 calls/day) — prefer get_token for a single symbol, which costs 1." +
+        "Free catalog and live price feed for all Robinhood Chain stock tokens. Use " +
+        "for token discovery, spot prices, and tracking market movers. Returns symbol, " +
+        "name, contract address, live price, price source, 24h change and " +
+        "corporate-action adjusted supply for every listed token, plus pending and " +
+        "recent corporate actions. No API key, no payment, and it spends none of a " +
+        "key's daily units. Carries no per-token DeFi depth — use get_token or " +
+        "get_defi for that." +
         PROV_PRICE +
         PROV_SUPPLY +
         PROV_CORPORATE_ACTIONS,
@@ -197,9 +199,9 @@ const PROV_BASE =
       description:
         "One Robinhood Chain stock token by symbol (e.g. NVDA): live price, " +
         "corporate-action adjusted supply, DeFi depth, and pending/recent " +
-        "corporate actions. Cheaper than get_catalog for a single spot check " +
-        "($0.05 via x402, or 1 of the 40 daily units with a free API key). Fails for an " +
-        "unknown symbol." +
+        "corporate actions. Unlike the free catalog this carries the token's DeFi " +
+        "depth ($0.05 via x402, or 1 of the 40 daily units with a free API key). " +
+        "Fails for an unknown symbol." +
         PROV_PRICE +
         PROV_SUPPLY +
         PROV_CORPORATE_ACTIONS,
@@ -251,7 +253,7 @@ const PROV_BASE =
       description:
         "Every Morpho lending market (as loan asset OR collateral, both roles labeled) " +
         "and Uniswap V3 pool involving one token — the full picture for comparing yield/ " +
-        "borrow options, not just the single best-APY figure in get_catalog/get_token. " +
+        "borrow options, not just the single best-APY figure in get_token. " +
         "$0.05 via x402, or 1 daily unit with a free API key. Fails for an unknown symbol." +
         PROV_DEFI,
       inputSchema: {
