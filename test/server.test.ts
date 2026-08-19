@@ -25,8 +25,19 @@ async function connectedClient(clientOptions: Parameters<typeof createServer>[0]
   return { client, server };
 }
 
-test("clientOptionsFromEnv throws without credentials", () => {
-  assert.throws(() => clientOptionsFromEnv({} as NodeJS.ProcessEnv), /needs credentials/);
+test("clientOptionsFromEnv returns a credentialless config, not an error", () => {
+  // It used to throw, which meant the server refused to START without a key
+  // or a funded wallet — on an API whose catalog is free and whose paid
+  // tools serve an anonymous per-IP allowance first.
+  const opts = clientOptionsFromEnv({} as NodeJS.ProcessEnv);
+  assert.deepEqual(opts, {});
+});
+
+test("a credentialless config still honours HOODGROW_BASE_URL", () => {
+  const opts = clientOptionsFromEnv({
+    HOODGROW_BASE_URL: "https://staging.example.com",
+  } as NodeJS.ProcessEnv);
+  assert.deepEqual(opts, { baseUrl: "https://staging.example.com" });
 });
 
 test("clientOptionsFromEnv prefers HOODGROW_API_KEY over HOODGROW_PRIVATE_KEY", () => {

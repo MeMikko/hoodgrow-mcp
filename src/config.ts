@@ -7,6 +7,11 @@ import type { HoodGrowClientOptions } from "hoodgrow";
  * bundles a shared credential into this package. `HOODGROW_API_KEY` wins
  * if both are set, matching HoodGrowClient's own precedence.
  *
+ * BOTH ARE OPTIONAL. With neither, the returned options carry no
+ * credentials: `get_catalog` is free, and the paid tools work until the
+ * API's anonymous per-IP daily allowance runs out, after which they return
+ * the server's 402 as a readable tool error naming the alternatives.
+ *
  * `HOODGROW_USE_CREDITS=true` (only meaningful alongside
  * `HOODGROW_PRIVATE_KEY`, ignored with `HOODGROW_API_KEY`) opts every data
  * tool into spending that wallet's prepaid credit balance instead of a
@@ -30,10 +35,13 @@ export function clientOptionsFromEnv(env: NodeJS.ProcessEnv = process.env): Hood
     const signer = privateKeyToAccount(privateKey as `0x${string}`);
     return { signer, useCredits, ...(baseUrl ? { baseUrl } : {}) };
   }
-  throw new Error(
-    "hoodgrow-mcp needs credentials: set HOODGROW_API_KEY (free, self-serve at " +
-      "https://www.hoodgrow.com/profile) or HOODGROW_PRIVATE_KEY (a wallet " +
-      "private key that pays per call via x402 — USDC on Base, only fund it " +
-      "with what you're willing to spend on this API)."
-  );
+  // No credentials is a valid setup, not an error. get_catalog is free, and
+  // every other tool serves an anonymous per-IP daily allowance before the
+  // API starts asking for payment — so a host can add this server and get
+  // real answers before deciding whether to obtain anything.
+  //
+  // This used to throw, which meant the server refused to start at all: a
+  // user had to get a key or fund a wallet before they could see one
+  // response, on an API whose catalog costs nothing.
+  return { ...(baseUrl ? { baseUrl } : {}) };
 }

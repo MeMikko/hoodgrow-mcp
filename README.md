@@ -49,14 +49,18 @@ Use the npm package instead:
 
 ## Run it yourself (npm — your own credentials)
 
-You supply your own credentials — this package never bundles a shared HoodGrow
-credential, so you control what gets spent and who's billed. Pick one:
+**Credentials are optional.** With none set, the server starts and works:
+`get_catalog` is free, and every other tool serves an anonymous per-IP daily
+allowance before the API asks for payment. Set one when you want more:
 
-- **x402, pay per call, no signup** — a wallet private key (`HOODGROW_PRIVATE_KEY`),
-  funded with USDC on Base. $0.10/call for the full catalog, $0.05/call for
-  one token.
 - **API key, free, self-serve** — `HOODGROW_API_KEY` from
-  [hoodgrow.com/profile](https://www.hoodgrow.com/profile).
+  [hoodgrow.com/profile](https://www.hoodgrow.com/profile). A larger daily
+  allowance, and a budget nobody behind the same IP can spend.
+- **x402, pay per call, no signup** — a wallet private key (`HOODGROW_PRIVATE_KEY`),
+  funded with USDC on Base. $0.05/call for the paid endpoints; no daily cap.
+
+This package never bundles a shared HoodGrow credential, so you control what
+gets spent and who's billed.
 
 ### Claude Desktop / Claude Code
 
@@ -105,10 +109,10 @@ of paying x402 per call. See "Prepaid credits" below.
 
 | Tool | Price (x402) | Description |
 | --- | --- | --- |
-| `get_catalog` | $0.10 | Every listed token: price, source, 24h change, corporate-action adjusted supply, DeFi depth, plus catalog-wide pending/recent corporate actions |
-| `get_token` | $0.05 | One token by symbol (e.g. `NVDA`), same fields, scoped |
+| `get_catalog` | **free** | Every listed token: symbol, name, address, price, source, 24h change, corporate-action adjusted supply, plus catalog-wide pending/recent corporate actions. No per-token DeFi — see `get_token` / `get_defi` |
+| `get_token` | $0.05 | One token by symbol (e.g. `NVDA`), same fields plus its DeFi depth |
 | `get_corporate_actions` | uses `get_token`/`get_catalog` above | Pending + recent corporate actions; pass a symbol to scope, omit for every tracked token |
-| `get_defi` | $0.05 | Every Morpho market a token participates in (loan OR collateral role) plus its Uniswap V3 pools — not just the single best-APY figure in `get_catalog`/`get_token` |
+| `get_defi` | $0.05 | Every Morpho market a token participates in (loan OR collateral role) plus its Uniswap V3 pools — not just the single best-APY figure in `get_token` |
 | `get_holders` | $0.05 | Holder-count trend, 24h net supply change (real mint/burn), and top-holder concentration (optional `limit`, 1-50, defaults to 10) |
 | `get_slippage` | $0.05 | How much a USD-sized trade (`side: "buy" \| "sell"`) would move the price, per Uniswap V3 pool — includes `bestPoolAddress`/`bestEffectivePrice` picking the best one for you |
 | `get_ohlc` | $0.05 | OHLC price candles for backtesting (`interval: "1h" \| "4h" \| "1d"`, optional `from`/`to`/`limit`, defaults to the last 30 days). Each candle carries `volumeUsd`/`swapCount` — USD swap volume across the token's Uniswap V3 pools — `null` for buckets older than the volume indexer's backfill window |
@@ -140,7 +144,7 @@ x402 payments are real money and are **not** idempotent — a retried timed-out
 call can pay twice. HoodGrow's paywall only ever asks for USDC
 (`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`) on Base mainnet
 (`eip155:8453`), paid to `0x8520B3693a2Cf3c2bEa3a505Af3A9c1b093954c7`, capped
-at $0.10/call — the underlying `hoodgrow`/`@x402` dependencies handle
+at $0.05/call — the underlying `hoodgrow`/`@x402` dependencies handle
 protocol-level verification, but you're responsible for how much you fund
 the signing wallet with.
 
@@ -148,21 +152,24 @@ the signing wallet with.
 
 30 requests/minute per IP by default for pay-per-call use.
 
-With a **free API key**, the daily allowance is 40 units and is weighted by
-what a call returns, not by how many calls you make:
+With **no credentials at all**, an anonymous per-IP daily allowance applies —
+enough to try every tool and decide, not to run a workload on.
+
+With a **free API key**, the daily allowance is 40 units:
 
 | Call | Units | Free-tier calls/day |
 |---|---|---|
-| `get_catalog` (every token in one response) | 10 | 4 |
+| `get_catalog` (every token in one response) | 0 | unmetered — it is free |
 | Any single-symbol tool | 1 | 40 |
 | Liveness check | 0 | unmetered |
 
-So prefer `get_token` over `get_catalog` when you want one symbol — it is
-ten times cheaper against the allowance and returns less to parse.
+Still prefer `get_token` over `get_catalog` when you want one symbol — not
+because it is cheaper now, but because it returns far less to parse and
+carries that token's DeFi depth, which the catalog does not.
 
-**x402 pay-per-call** has no daily cap at all ($0.10 for the catalog, $0.05
-per symbol), and **Builder** removes the cap and raises the per-minute limit
-to 300 — see [docs.hoodgrow.com](https://docs.hoodgrow.com).
+**x402 pay-per-call** has no daily cap at all ($0.05 per paid endpoint; the
+catalog is free either way), and **Builder** removes the cap and raises the
+per-minute limit to 300 — see [docs.hoodgrow.com](https://docs.hoodgrow.com).
 
 ## Development
 
