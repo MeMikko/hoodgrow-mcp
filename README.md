@@ -40,18 +40,24 @@ Then ask your assistant things like:
 - *"Any pending stock splits or dividends in the next week?"*
 - *"Top gainers and biggest whale trades today."*
 
-Anonymous access is bounded per IP — 20 requests/minute and 30 daily units,
-where a full-catalog call costs 10 units and a single-symbol call costs 1.
-Enough to work through a conversation; a free API key (below) raises the
-ceiling to 40 units and gives you a budget nobody else behind your IP can
-spend. Prefer running the server yourself, or need x402 pay-per-call?
+`get_catalog` — every listed token with live price, 24h change and adjusted
+supply — answers anonymously and unmetered, no key at all. The per-symbol
+tools ask for a free API key or an x402 payment on the first call. Anonymous
+access is capped at 20 requests/minute per IP, which is abuse shaping rather
+than billing and applies to the catalog too.
+
+There used to be an anonymous daily budget in front of the per-symbol tools.
+It is gone: a budget keyed on the caller's IP is a fresh budget per address
+to anything calling from pooled egress, so it never actually led anyone to
+the paywall. Prefer running the server yourself, or need x402 pay-per-call?
 Use the npm package instead:
 
 ## Run it yourself (npm — your own credentials)
 
 **Credentials are optional.** With none set, the server starts and works:
-`get_catalog` is free, and every other tool serves an anonymous per-IP daily
-allowance before the API asks for payment. Set one when you want more:
+`get_catalog` is free and unmetered. Every other tool returns the API's 402
+on its first call, as a readable tool error naming the alternatives. Set one
+of these to get past it:
 
 - **API key, free, self-serve** — `HOODGROW_API_KEY` from
   [hoodgrow.com/profile](https://www.hoodgrow.com/profile). A larger daily
@@ -152,8 +158,8 @@ the signing wallet with.
 
 30 requests/minute per IP by default for pay-per-call use.
 
-With **no credentials at all**, an anonymous per-IP daily allowance applies —
-enough to try every tool and decide, not to run a workload on.
+With **no credentials at all**, `get_catalog` still answers — it is free and
+unmetered — and every other tool returns a 402 on the first call.
 
 With a **free API key**, the daily allowance is 40 units:
 
