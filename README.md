@@ -1,3 +1,28 @@
+> ## This package is retired
+>
+> **Status: closed, August 2026.** Not maintained. The HoodGrow API it wraps is
+> shut down, so every tool here now fails at the network call — the hosted
+> server at `https://www.hoodgrow.com/api/mcp` is gone and the npm package is
+> deprecated.
+>
+> ### Why
+>
+> HoodGrow had no paying customers and $0.81 of lifetime revenue. The cause was
+> not this package: almost everything the API served is published free by
+> Robinhood's own registry and readable straight off the chain, so a paid copy
+> was a commodity with a free substitute one HTTP call away. See
+> [HoodGrow's README](https://github.com/MeMikko/HoodGrow) for the full
+> reasoning.
+>
+> ### Still worth reading
+>
+> This is a complete, working MCP server: 14 tools with honest annotations
+> (`idempotentHint` is `false` in pay-per-call mode, because a retried call
+> charges again — a detail most servers get wrong), x402 payment, prepaid
+> credits and bearer auth in one client. It was listed in the official MCP
+> registry and passed directory review. If you are building one, the parts
+> here work.
+
 # hoodgrow-mcp
 
 [![M8ven Verified](https://m8ven.ai/badge/mcp/memikko-hoodgrow-mcp-1ir3oo)](https://m8ven.ai/mcp/memikko-hoodgrow-mcp-1ir3oo)
